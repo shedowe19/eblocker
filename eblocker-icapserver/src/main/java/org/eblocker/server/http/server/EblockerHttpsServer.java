@@ -2077,6 +2077,10 @@ public class EblockerHttpsServer implements Preprocessor {
                 .action("getConfigurations", HttpMethod.GET)
                 .name("dashboard.vpn.mobile.configurations.get");
         server
+                .uri("/api/dashboard/wireguard/configurations/{deviceId}", wireGuardMobileController)
+                .action("disableDevice", HttpMethod.DELETE)
+                .name("dashboard.vpn.mobile.configurations.delete");
+        server
                 .uri("/api/dashboard/wireguard/configurations/generateDownloadUrl/{deviceId}/{deviceType}", wireGuardMobileController)
                 .action("generateDownloadUrl", HttpMethod.GET)
                 .name("dashboard.vpn.mobile.configurations.generateDownloadUrl.get");
@@ -2085,6 +2089,14 @@ public class EblockerHttpsServer implements Preprocessor {
                 .action("downloadClientConf", HttpMethod.GET)
                 .name("dashboard.vpn.mobile.configurations.downloadClientConf.get")
                 .noSerialization();
+        server
+                .uri("/api/dashboard/wireguard/test", mobileConnectionCheckController)
+                .action("start", HttpMethod.POST)
+                .name("dashboard.vpn.test.start");
+        server
+                .uri("/api/dashboard/wireguard/test", mobileConnectionCheckController)
+                .action("getStatus", HttpMethod.GET)
+                .name("dashboard.vpn.test.status");
         server
                 .uri("/api/dashboard/customdomainfilter/{userId}", customDomainFilterConfigController)
                 .action("getFilter", HttpMethod.GET)
