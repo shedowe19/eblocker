@@ -57,8 +57,11 @@ public class IcapServerScriptTest {
                 + "printf '%s\\n' \"$@\" > \"$JAVA_ARGUMENTS_FILE\"\n");
 
         Path script = testDirectory.resolve("eblocker-icapserver.sh");
-        Files.writeString(script, Files.readString(SCRIPT, StandardCharsets.UTF_8)
-                .replace("${project.build.finalName}", "eblocker-icapserver-test"), StandardCharsets.UTF_8);
+        String scriptContent = Files.readString(SCRIPT, StandardCharsets.UTF_8)
+                .replace("${project.build.finalName}", "eblocker-icapserver-test")
+                .replace("export PATH=\"$BASEDIR/scripts:/usr/sbin:/usr/bin:/sbin:/bin:$PATH\"",
+                        "export PATH=\"" + binDirectory + ":$BASEDIR/scripts:/usr/sbin:/usr/bin:/sbin:/bin:$PATH\"");
+        Files.writeString(script, scriptContent, StandardCharsets.UTF_8);
 
         ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", script.toString());
         Map<String, String> environment = processBuilder.environment();
