@@ -132,6 +132,12 @@ public class JedisDataSource implements DataSource {
     private static final String KEY_OPENVPN_MAPPED_PORT = "OpenVpnMappedPort";
     private static final String KEY_OPENVPN_PORT_FORWARDING_MODE = "OpenVpnPortForwardingMode";
     private static final String KEY_OPENVPN_EXTERNAL_ADDRESS_TYPE = "OpenVpnExternalAddressType";
+    private static final String KEY_WIREGUARD_MOBILE_SERVER_ENABLED = "WireGuardMobileServerEnabled";
+    private static final String KEY_WIREGUARD_MOBILE_FIRST_RUN = "WireGuardMobileFirstRun";
+    private static final String KEY_WIREGUARD_MOBILE_SERVER_HOST = "WireGuardMobileHost";
+    private static final String KEY_WIREGUARD_MOBILE_MAPPED_PORT = "WireGuardMobileMappedPort";
+    private static final String KEY_WIREGUARD_MOBILE_PORT_FORWARDING_MODE = "WireGuardMobilePortForwardingMode";
+    private static final String KEY_WIREGUARD_MOBILE_EXTERNAL_ADDRESS_TYPE = "WireGuardMobileExternalAddressType";
 
     private static final String KEY_FILTER_MODE = "filter_mode";
     private static final String KEY_FILTER_PLUG_AND_PLAY_ADS_ENABLED = "filter_plug_and_play_ads_enabled";
@@ -998,6 +1004,116 @@ public class JedisDataSource implements DataSource {
             }
 
             return value.equals(VALUE_TRUE);
+        }
+    }
+
+    @Override
+    public void setWireGuardMobileServerState(boolean state) {
+        try (Jedis jedis = pool.getResource()) {
+            jedis.set(KEY_WIREGUARD_MOBILE_SERVER_ENABLED, state ? VALUE_TRUE : VALUE_FALSE);
+        }
+    }
+
+    @Override
+    public boolean getWireGuardMobileServerState() {
+        try (Jedis jedis = pool.getResource()) {
+            String value = jedis.get(KEY_WIREGUARD_MOBILE_SERVER_ENABLED);
+            if (value == null) {
+                return false;
+            }
+            return value.equals(VALUE_TRUE);
+        }
+    }
+
+    @Override
+    public void setWireGuardMobileServerFirstRun(boolean state) {
+        try (Jedis jedis = pool.getResource()) {
+            jedis.set(KEY_WIREGUARD_MOBILE_FIRST_RUN, state ? VALUE_TRUE : VALUE_FALSE);
+        }
+    }
+
+    @Override
+    public boolean getWireGuardMobileServerFirstRun() {
+        try (Jedis jedis = pool.getResource()) {
+            String value = jedis.get(KEY_WIREGUARD_MOBILE_FIRST_RUN);
+            if (value == null) {
+                return true;
+            }
+            return value.equals(VALUE_TRUE);
+        }
+    }
+
+    @Override
+    public void setWireGuardMobileServerHost(String host) {
+        try (Jedis jedis = pool.getResource()) {
+            jedis.set(KEY_WIREGUARD_MOBILE_SERVER_HOST, host);
+        }
+    }
+
+    @Override
+    public String getWireGuardMobileServerHost() {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.get(KEY_WIREGUARD_MOBILE_SERVER_HOST);
+        }
+    }
+
+    @Override
+    public Integer getWireGuardMobileMappedPort() {
+        try (Jedis jedis = pool.getResource()) {
+            String num = jedis.get(KEY_WIREGUARD_MOBILE_MAPPED_PORT);
+            if (num != null) {
+                return Integer.valueOf(num);
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public void setWireGuardMobileMappedPort(Integer port) {
+        if (port != null) {
+            try (Jedis jedis = pool.getResource()) {
+                jedis.set(KEY_WIREGUARD_MOBILE_MAPPED_PORT, port.toString());
+            }
+        }
+    }
+
+    @Override
+    public PortForwardingMode getWireGuardMobilePortForwardingMode() {
+        try (Jedis jedis = pool.getResource()) {
+            String mode = jedis.get(KEY_WIREGUARD_MOBILE_PORT_FORWARDING_MODE);
+            if (mode != null) {
+                return PortForwardingMode.valueOf(mode);
+            }
+            return PortForwardingMode.getDefault();
+        }
+    }
+
+    @Override
+    public void setWireGuardMobilePortForwardingMode(PortForwardingMode mode) {
+        if (mode != null) {
+            try (Jedis jedis = pool.getResource()) {
+                jedis.set(KEY_WIREGUARD_MOBILE_PORT_FORWARDING_MODE, mode.toString());
+            }
+        }
+    }
+
+    @Override
+    public ExternalAddressType getWireGuardMobileExternalAddressType() {
+        try (Jedis jedis = pool.getResource()) {
+            String type = jedis.get(KEY_WIREGUARD_MOBILE_EXTERNAL_ADDRESS_TYPE);
+            if (type != null) {
+                return ExternalAddressType.valueOf(ExternalAddressType.class, type);
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public void setWireGuardMobileExternalAddressType(ExternalAddressType type) {
+        if (type != null) {
+            try (Jedis jedis = pool.getResource()) {
+                jedis.set(KEY_WIREGUARD_MOBILE_EXTERNAL_ADDRESS_TYPE, type.toString());
+            }
         }
     }
 

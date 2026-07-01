@@ -21,6 +21,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.eblocker.server.common.data.DataSource;
 import org.eblocker.server.common.data.Device;
+import org.eblocker.server.common.data.IpAddress;
 import org.eblocker.server.common.data.events.EventLogger;
 import org.eblocker.server.common.data.events.Events;
 import org.eblocker.server.common.data.openvpn.ExternalAddressType;
@@ -38,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -53,6 +55,8 @@ public class OpenVpnServerService extends VpnServerService {
     private final ScheduledExecutorService executorService;
     private final EventLogger eventLogger;
     private final String openVpnServerCommand;
+    private final String wireGuardMobileAddressPrefix;
+    private final String wireGuardMobileAddressIp6Prefix;
     private final OpenVpnCa openVpnCa;
 
     private static final Logger log = LoggerFactory.getLogger(OpenVpnServerService.class);
@@ -71,6 +75,8 @@ public class OpenVpnServerService extends VpnServerService {
                                 @Named("openvpn.server.portforwarding.duration.initial") int tempDuration,
                                 @Named("openvpn.server.portforwarding.duration.use") int duration,
                                 @Named("openvpn.server.portforwarding.description") String portForwardingDescription,
+                                @Named("wireguard.mobile.peer.address.prefix") String wireGuardMobileAddressPrefix,
+                                @Named("wireguard.mobile.peer.address.ip6.prefix") String wireGuardMobileAddressIp6Prefix,
                                 OpenVpnCa openVpnCa) {
         super(upnpService, port, portForwardingDescription, tempDuration, duration);
         this.dataSource = dataSource;
@@ -81,6 +87,8 @@ public class OpenVpnServerService extends VpnServerService {
         this.dnsService = dnsService;
         this.dynDnsService = dynDnsService;
         this.openVpnServerCommand = openVpnServerCommand;
+        this.wireGuardMobileAddressPrefix = wireGuardMobileAddressPrefix;
+        this.wireGuardMobileAddressIp6Prefix = wireGuardMobileAddressIp6Prefix;
         this.eventLogger = eventLogger;
         this.openVpnCa = openVpnCa;
     }
@@ -221,7 +229,7 @@ public class OpenVpnServerService extends VpnServerService {
             }
             setOpenVpnServerHost(dynDnsService.getHostname());
         } else {
-            if (dynDnsService.isEnabled()) {
+            if (dynDnsService.isEnabled() && dataSource.getWireGuardMobileExternalAddressType() != ExternalAddressType.EBLOCKER_DYN_DNS) {
                 dynDnsService.disable();
             }
             String newHost = requestedStatus.getHost() != null ? requestedStatus.getHost() : "";
@@ -245,9 +253,26 @@ public class OpenVpnServerService extends VpnServerService {
 
     private void disableOpenVpnServer() {
         deviceService.getDevices(false).stream()
+                .filter(device -> !hasWireGuardMobileAddress(device.getIpAddresses()))
                 .forEach(device -> device.setIsVpnClient(false));
 
         dataSource.setOpenVpnServerState(false);
+    }
+
+    private boolean hasWireGuardMobileAddress(List<IpAddress> ipAddresses) {
+        if (ipAddresses == null) {
+            return false;
+        }
+        return ipAddresses.stream().anyMatch(this::isWireGuardMobileAddress);
+    }
+
+    private boolean isWireGuardMobileAddress(IpAddress ipAddress) {
+        String address = ipAddress.toString();
+        return hasPrefix(address, wireGuardMobileAddressPrefix) || hasPrefix(address, wireGuardMobileAddressIp6Prefix);
+    }
+
+    private boolean hasPrefix(String address, String prefix) {
+        return prefix != null && !prefix.isEmpty() && address.startsWith(prefix);
     }
 
     public boolean isOpenVpnServerEnabled() {

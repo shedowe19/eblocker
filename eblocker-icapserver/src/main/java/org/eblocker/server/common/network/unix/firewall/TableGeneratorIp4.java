@@ -41,6 +41,7 @@ public class TableGeneratorIp4 extends TableGeneratorBase {
     private final String fallbackIp;
     private final String malwareIpSetName;
     private final int mobileVpnServerPort;
+    private final int wireGuardMobileServerPort;
 
     private String mobileVpnIpAddress;
     private String gatewayIpAddress;
@@ -62,6 +63,7 @@ public class TableGeneratorIp4 extends TableGeneratorBase {
                              @Named("network.control.bar.host.fallback.ip") String fallbackIp,
                              @Named("malware.filter.ipset.name") String malwareIpSetName,
                              @Named("openvpn.server.port") int mobileVpnServerPort,
+                             @Named("wireguard.mobile.server.port") int wireGuardMobileServerPort,
                              @Named("dns.server.port") int localDnsPort,
                              @Named("tor.port") int torPort,
                              @Named("tor.dns.port") int torDnsPort,
@@ -77,6 +79,7 @@ public class TableGeneratorIp4 extends TableGeneratorBase {
         this.malwareIpSetName = malwareIpSetName;
         this.fallbackIp = fallbackIp;
         this.mobileVpnServerPort = mobileVpnServerPort;
+        this.wireGuardMobileServerPort = wireGuardMobileServerPort;
     }
 
     public Table generateNatTable(IpAddressFilter ipAddressFilter, Set<OpenVpnClientState> anonVpnClients) {
@@ -235,7 +238,7 @@ public class TableGeneratorIp4 extends TableGeneratorBase {
             LOG.info("Server mode: Setting firewall resctrictions");
             Rule dropNonStdPorts = new Rule(standardInput)
                     .states(true, Rule.State.NEW)
-                    .destinationPorts(false, Rule.SSH_PORT, Rule.HTTP_PORT, Rule.HTTPS_PORT, mobileVpnServerPort)
+                    .destinationPorts(false, Rule.SSH_PORT, Rule.HTTP_PORT, Rule.HTTPS_PORT, mobileVpnServerPort, wireGuardMobileServerPort)
                     .drop();
             input.rule(new Rule(dropNonStdPorts).tcp());
             input.rule(new Rule(dropNonStdPorts).udp());
@@ -311,6 +314,7 @@ public class TableGeneratorIp4 extends TableGeneratorBase {
 
             // and to eBlocker Mobile port from all addresses
             input.rule(new Rule(standardInput).udp().destinationPort(mobileVpnServerPort).accept());
+            input.rule(new Rule(standardInput).udp().destinationPort(wireGuardMobileServerPort).accept());
 
             // allow responses to DNS, Squid, etc.
             input.rule(new Rule(standardInput).states(true, Rule.State.ESTABLISHED, Rule.State.RELATED).accept());

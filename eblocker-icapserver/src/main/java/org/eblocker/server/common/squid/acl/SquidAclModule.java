@@ -20,6 +20,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
+import org.eblocker.server.common.data.IpAddress;
 import org.eblocker.server.common.util.Ip4Utils;
 import org.eblocker.server.http.service.DeviceService;
 
@@ -37,11 +38,13 @@ public class SquidAclModule extends AbstractModule {
     public SquidAcl mobileClientsAcl(@Named("squid.mobile.acl.file.path") String path,
                                      DeviceService deviceService,
                                      @Named("network.vpn.subnet.ip") String vpnSubnet,
-                                     @Named("network.vpn.subnet.netmask") String vpnNetmask) {
+                                     @Named("network.vpn.subnet.netmask") String vpnNetmask,
+                                     @Named("wireguard.mobile.peer.address.prefix") String wireGuardMobileAddressPrefix,
+                                     @Named("wireguard.mobile.peer.address.ip6.prefix") String wireGuardMobileAddressIp6Prefix) {
         return new DevicePredicateFilterAcl(
                 path, deviceService,
                 device -> device.isEnabled() && device.isVpnClient(),
-                ip -> ip.isIpv4() && Ip4Utils.isInSubnet(ip.toString(), vpnSubnet, vpnNetmask));
+                ip -> isMobileVpnAddress(ip, vpnSubnet, vpnNetmask, wireGuardMobileAddressPrefix, wireGuardMobileAddressIp6Prefix));
     }
 
     @Provides
@@ -49,11 +52,31 @@ public class SquidAclModule extends AbstractModule {
     public SquidAcl mobileClientsPrivateNetworkAccessAcl(@Named("squid.mobile.private.network.access.acl.file.path") String path,
                                                          DeviceService deviceService,
                                                          @Named("network.vpn.subnet.ip") String vpnSubnet,
-                                                         @Named("network.vpn.subnet.netmask") String vpnNetmask) {
+                                                         @Named("network.vpn.subnet.netmask") String vpnNetmask,
+                                                         @Named("wireguard.mobile.peer.address.prefix") String wireGuardMobileAddressPrefix,
+                                                         @Named("wireguard.mobile.peer.address.ip6.prefix") String wireGuardMobileAddressIp6Prefix) {
         return new DevicePredicateFilterAcl(
                 path, deviceService,
                 device -> device.isEnabled() && device.isVpnClient() && device.isMobilePrivateNetworkAccess(),
-                ip -> ip.isIpv4() && Ip4Utils.isInSubnet(ip.toString(), vpnSubnet, vpnNetmask));
+                ip -> isMobileVpnAddress(ip, vpnSubnet, vpnNetmask, wireGuardMobileAddressPrefix, wireGuardMobileAddressIp6Prefix));
+    }
+
+    private boolean isMobileVpnAddress(IpAddress ip,
+                                       String vpnSubnet,
+                                       String vpnNetmask,
+                                       String wireGuardMobileAddressPrefix,
+                                       String wireGuardMobileAddressIp6Prefix) {
+        return isOpenVpnMobileAddress(ip, vpnSubnet, vpnNetmask)
+                || hasPrefix(ip.toString(), wireGuardMobileAddressPrefix)
+                || hasPrefix(ip.toString(), wireGuardMobileAddressIp6Prefix);
+    }
+
+    private boolean isOpenVpnMobileAddress(IpAddress ip, String vpnSubnet, String vpnNetmask) {
+        return ip.isIpv4() && Ip4Utils.isInSubnet(ip.toString(), vpnSubnet, vpnNetmask);
+    }
+
+    private boolean hasPrefix(String address, String prefix) {
+        return prefix != null && !prefix.isEmpty() && address.startsWith(prefix);
     }
 
     @Provides

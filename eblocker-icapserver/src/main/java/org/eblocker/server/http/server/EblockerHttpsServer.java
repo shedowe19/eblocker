@@ -65,6 +65,7 @@ import org.eblocker.server.http.controller.NetworkController;
 import org.eblocker.server.http.controller.OpenVpnController;
 import org.eblocker.server.http.controller.OpenVpnServerController;
 import org.eblocker.server.http.controller.WireGuardController;
+import org.eblocker.server.http.controller.WireGuardMobileController;
 import org.eblocker.server.http.controller.PageContextController;
 import org.eblocker.server.http.controller.ParentalControlController;
 import org.eblocker.server.http.controller.ParentalControlFilterListsController;
@@ -148,6 +149,7 @@ public class EblockerHttpsServer implements Preprocessor {
     private final AuthenticationController authenticationController;
     private final OpenVpnController openVpnController;
     private final WireGuardController wireGuardController;
+    private final WireGuardMobileController wireGuardMobileController;
     private final OpenVpnServerController openVpnServerController;
     private final ControlBarController controlBarController;
     private final SplashController splashController;
@@ -217,6 +219,7 @@ public class EblockerHttpsServer implements Preprocessor {
                                NetworkController networkController,
                                OpenVpnController openVpnController,
                                WireGuardController wireGuardController,
+                               WireGuardMobileController wireGuardMobileController,
                                OpenVpnServerController openVpnServerController,
                                PageContextController pageContextController,
                                ParentalControlController parentalControlController,
@@ -310,6 +313,7 @@ public class EblockerHttpsServer implements Preprocessor {
 
         this.openVpnController = openVpnController;
         this.wireGuardController = wireGuardController;
+        this.wireGuardMobileController = wireGuardMobileController;
         this.openVpnServerController = openVpnServerController;
 
         this.controlBarController = controlBarController;
@@ -1531,6 +1535,49 @@ public class EblockerHttpsServer implements Preprocessor {
                 .action("check", HttpMethod.POST)
                 .name("adminconsole.vpn.test.dns");
 
+        // ** New Adminconsole: WireGuard (eBlocker Mobile) side-by-side with OpenVPN Mobile
+        server
+                .uri("/api/adminconsole/wireguard/status", wireGuardMobileController)
+                .action("getWireGuardMobileStatus", HttpMethod.GET)
+                .name("adminconsole.wireguard.mobile.status.get");
+        server
+                .uri("/api/adminconsole/wireguard/status", wireGuardMobileController)
+                .action("setWireGuardMobileStatus", HttpMethod.POST)
+                .name("adminconsole.wireguard.mobile.status.set");
+        server
+                .uri("/api/adminconsole/wireguard/status", wireGuardMobileController)
+                .action("resetWireGuardMobileStatus", HttpMethod.DELETE)
+                .name("adminconsole.wireguard.mobile.status.delete");
+        server
+                .uri("/api/adminconsole/wireguard/configurations", wireGuardMobileController)
+                .action("getConfigurations", HttpMethod.GET)
+                .name("adminconsole.wireguard.mobile.configurations.get");
+        server
+                .uri("/api/adminconsole/wireguard/configurations/generateDownloadUrl/{deviceId}/{deviceType}", wireGuardMobileController)
+                .action("generateDownloadUrl", HttpMethod.GET)
+                .name("adminconsole.wireguard.mobile.configurations.generateDownloadUrl.get");
+        server
+                .uri("/api/adminconsole/wireguard/configurations/downloadClientConf/{deviceId}", wireGuardMobileController)
+                .action("downloadClientConf", HttpMethod.GET)
+                .name("adminconsole.wireguard.mobile.configurations.downloadClientConf.get")
+                .noSerialization();
+        server
+                .uri("/api/adminconsole/wireguard/enable/{deviceId}", wireGuardMobileController)
+                .action("enableDevice", HttpMethod.POST)
+                .name("adminconsole.wireguard.mobile.enable.device.post");
+        server
+                .uri("/api/adminconsole/wireguard/disable/{deviceId}", wireGuardMobileController)
+                .action("disableDevice", HttpMethod.POST)
+                .name("adminconsole.wireguard.mobile.disable.device.post");
+        server
+                .uri("/api/adminconsole/wireguard/privateNetworkAccess/{deviceId}", wireGuardMobileController)
+                .action("setPrivateNetworkAccess", HttpMethod.PUT)
+                .name("adminconsole.wireguard.mobile.privateNetworkAccess.device.put");
+        server
+                .uri("/api/adminconsole/wireguard/upnp/{port}", wireGuardMobileController)
+                .action("setPortForwarding", HttpMethod.PUT)
+                .name("adminconsole.wireguard.mobile.upnp.portForwarding");
+
         // ** New Adminconsole: save customer info (for remind-me-again VPN offer)
         server
                 .uri("/api/adminconsole/customerInfo", customerInfoController)
@@ -2126,6 +2173,39 @@ public class EblockerHttpsServer implements Preprocessor {
                 .uri("/api/dashboard/openvpn/certificates/downloadClientConf/{deviceId}", openVpnServerController)
                 .action("downloadClientConf", HttpMethod.GET)
                 .name("dashboard.vpn.server.certificates.downloadClientConf.get")
+                .noSerialization();
+        server
+                .uri("/api/dashboard/wireguard/filename/{deviceId}/{deviceType}", wireGuardMobileController)
+                .action("getWireGuardConfigurationFileName", HttpMethod.GET)
+                .name("dashboard.wireguard.mobile.filename.get");
+        server
+                .uri("/api/dashboard/wireguard/status", wireGuardMobileController)
+                .action("getWireGuardMobileStatus", HttpMethod.GET)
+                .name("dashboard.wireguard.mobile.status.get");
+        server
+                .uri("/api/dashboard/wireguard/status", wireGuardMobileController)
+                .action("setWireGuardMobileStatus", HttpMethod.POST)
+                .name("dashboard.wireguard.mobile.status.set");
+        server
+                .uri("/api/dashboard/wireguard/status", wireGuardMobileController)
+                .action("resetWireGuardMobileStatus", HttpMethod.DELETE)
+                .name("dashboard.wireguard.mobile.status.delete");
+        server
+                .uri("/api/dashboard/wireguard/configurations", wireGuardMobileController)
+                .action("getConfigurations", HttpMethod.GET)
+                .name("dashboard.wireguard.mobile.configurations.get");
+        server
+                .uri("/api/dashboard/wireguard/configurations/{deviceId}", wireGuardMobileController)
+                .action("disableDevice", HttpMethod.DELETE)
+                .name("dashboard.wireguard.mobile.configurations.delete");
+        server
+                .uri("/api/dashboard/wireguard/configurations/generateDownloadUrl/{deviceId}/{deviceType}", wireGuardMobileController)
+                .action("generateDownloadUrl", HttpMethod.GET)
+                .name("dashboard.wireguard.mobile.configurations.generateDownloadUrl.get");
+        server
+                .uri("/api/dashboard/wireguard/configurations/downloadClientConf/{deviceId}", wireGuardMobileController)
+                .action("downloadClientConf", HttpMethod.GET)
+                .name("dashboard.wireguard.mobile.configurations.downloadClientConf.get")
                 .noSerialization();
         server
                 .uri("/api/dashboard/customdomainfilter/{userId}", customDomainFilterConfigController)

@@ -118,6 +118,48 @@ public class SquidAclsTest {
     }
 
     @Test
+    public void mobileClientsAclIncludesOpenVpnAndWireGuardMobileAddresses() throws IOException {
+        Device openVpnDevice = createMockDevice("device:openvpn", true, false, false, false,
+                "192.168.1.20", "10.8.0.23");
+        openVpnDevice.setIsVpnClient(true);
+        Device wireGuardDevice = createMockDevice("device:wireguard", true, false, false, false,
+                "192.168.1.21", "10.9.0.4", "fd42:eb10:9::4");
+        wireGuardDevice.setIsVpnClient(true);
+        Device regularDevice = createMockDevice("device:regular", true, false, false, false,
+                "192.168.1.22");
+        devices.clear();
+        devices.add(openVpnDevice);
+        devices.add(wireGuardDevice);
+        devices.add(regularDevice);
+
+        SquidAcl acl = module.mobileClientsAcl(aclPath.toString(), deviceService,
+                "10.8.0.0", "255.255.255.0", "10.9.0.", "fd42:eb10:9::");
+
+        Assert.assertTrue(acl.update());
+        assertContent("10.8.0.23", "10.9.0.4", "fd42:eb10:9::4");
+    }
+
+    @Test
+    public void mobilePrivateNetworkAccessAclIncludesWireGuardMobileAddresses() throws IOException {
+        Device wireGuardDevice = createMockDevice("device:wireguard", true, false, false, false,
+                "192.168.1.21", "10.9.0.4", "fd42:eb10:9::4");
+        wireGuardDevice.setIsVpnClient(true);
+        wireGuardDevice.setMobilePrivateNetworkAccess(true);
+        Device blockedWireGuardDevice = createMockDevice("device:blocked", true, false, false, false,
+                "192.168.1.22", "10.9.0.5", "fd42:eb10:9::5");
+        blockedWireGuardDevice.setIsVpnClient(true);
+        devices.clear();
+        devices.add(wireGuardDevice);
+        devices.add(blockedWireGuardDevice);
+
+        SquidAcl acl = module.mobileClientsPrivateNetworkAccessAcl(aclPath.toString(), deviceService,
+                "10.8.0.0", "255.255.255.0", "10.9.0.", "fd42:eb10:9::");
+
+        Assert.assertTrue(acl.update());
+        assertContent("10.9.0.4", "fd42:eb10:9::4");
+    }
+
+    @Test
     public void filteredClientsAcl() throws IOException {
         testConfigurableAcl(module.filteredClientsAcl(aclPath.toString(), deviceService));
     }

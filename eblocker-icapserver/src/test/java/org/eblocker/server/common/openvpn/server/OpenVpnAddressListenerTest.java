@@ -51,7 +51,7 @@ public class OpenVpnAddressListenerTest {
         dnsServer = Mockito.mock(EblockerDnsServer.class);
         networkStateMachine = Mockito.mock(NetworkStateMachine.class);
         pubSubService = Mockito.mock(PubSubService.class);
-        listener = new OpenVpnAddressListener("10.8.0.0", "255.255.255.0", deviceService, dnsServer, networkStateMachine, pubSubService);
+        listener = new OpenVpnAddressListener("10.8.0.0", "255.255.255.0", deviceService, dnsServer, networkStateMachine, "10.9.0.", "fd42:eb10:9::", pubSubService);
     }
 
     @After
@@ -110,6 +110,29 @@ public class OpenVpnAddressListenerTest {
         Mockito.verify(deviceService).updateDevice(device);
         Mockito.verify(networkStateMachine).deviceStateChanged();
         Assert.assertEquals(Collections.singletonList(IpAddress.parse("192.168.1.23")), device.getIpAddresses());
+    }
+
+    @Test
+    public void processDeletePreservesWireGuardMobileVpnClientState() {
+        Device device = TestDeviceFactory.createDevice("abcdef012345", "192.168.1.23", true);
+        device.setIsVpnClient(true);
+        List<IpAddress> ipAddresses = device.getIpAddresses();
+        ipAddresses.add(IpAddress.parse("10.8.0.6"));
+        ipAddresses.add(IpAddress.parse("10.9.0.6"));
+        ipAddresses.add(IpAddress.parse("fd42:eb10:9::6"));
+        device.setIpAddresses(ipAddresses);
+        Mockito.when(deviceService.getDeviceByIp(IpAddress.parse("10.8.0.6"))).thenReturn(device);
+
+        listener.init();
+        listener.process("delete 10.8.0.6");
+
+        Mockito.verify(deviceService).updateDevice(device);
+        Mockito.verify(networkStateMachine).deviceStateChanged();
+        Assert.assertTrue(device.isVpnClient());
+        Assert.assertEquals(Sets.newHashSet(
+                IpAddress.parse("192.168.1.23"),
+                IpAddress.parse("10.9.0.6"),
+                IpAddress.parse("fd42:eb10:9::6")), new HashSet<>(device.getIpAddresses()));
     }
 
     @Test

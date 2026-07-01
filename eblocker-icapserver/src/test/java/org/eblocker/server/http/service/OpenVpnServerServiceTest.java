@@ -19,6 +19,7 @@ package org.eblocker.server.http.service;
 import org.eblocker.server.common.MockScheduledExecutorService;
 import org.eblocker.server.common.data.DataSource;
 import org.eblocker.server.common.data.Device;
+import org.eblocker.server.common.data.IpAddress;
 import org.eblocker.server.common.data.events.EventLogger;
 import org.eblocker.server.common.data.openvpn.ExternalAddressType;
 import org.eblocker.server.common.data.openvpn.PortForwardingMode;
@@ -77,7 +78,7 @@ public class OpenVpnServerServiceTest {
     private OpenVpnServerService createOpenVpnServerService() {
         return new OpenVpnServerService(scriptRunner, dataSource, deviceService, upnpService, dnsServer,
                 dnsService, dynDnsService, executorService, eventLogger, openVpnServerCommand, port, tempDuration,
-                duration, portForwardingDescription, openVpnCa);
+                duration, portForwardingDescription, "10.9.0.", "fd42:eb10:9::", openVpnCa);
     }
 
     private void createAndInitService() {
@@ -166,6 +167,48 @@ public class OpenVpnServerServiceTest {
 
         assertFalse(status.isRunning());
         Mockito.verify(device, Mockito.times(1)).setIsVpnClient(false);
+    }
+
+    @Test
+    public void stopOpenVpnServerPreservesWireGuardMobileVpnClientState() throws Exception {
+        Device wireGuardDevice = new Device();
+        wireGuardDevice.setIsVpnClient(true);
+        wireGuardDevice.setIpAddresses(java.util.List.of(
+                IpAddress.parse("192.168.1.42"),
+                IpAddress.parse("10.9.0.4"),
+                IpAddress.parse("fd42:eb10:9::4")));
+        Device openVpnOnlyDevice = new Device();
+        openVpnOnlyDevice.setIsVpnClient(true);
+        openVpnOnlyDevice.setIpAddresses(java.util.List.of(
+                IpAddress.parse("192.168.1.43"),
+                IpAddress.parse("10.8.0.23")));
+        Mockito.when(deviceService.getDevices(false)).thenReturn(java.util.List.of(wireGuardDevice, openVpnOnlyDevice));
+        Mockito.when(scriptRunner.runScript(openVpnServerCommand, "status")).thenReturn(0);
+        Mockito.when(scriptRunner.runScript(openVpnServerCommand, "stop")).thenReturn(0);
+
+        createAndInitService();
+
+        VpnServerStatus status = service.setOpenVpnServerStatus(stopServerRequest());
+
+        assertFalse(status.isRunning());
+        assertTrue(wireGuardDevice.isVpnClient());
+        assertFalse(openVpnOnlyDevice.isVpnClient());
+    }
+
+    @Test
+    public void fixedOpenVpnAccessDoesNotDisableDynDnsWhenWireGuardMobileUsesDynDns() throws Exception {
+        VpnServerStatus statusIn = startServerRequest();
+        statusIn.setExternalAddressType(ExternalAddressType.FIXED_IP);
+        Mockito.when(dynDnsService.isEnabled()).thenReturn(true);
+        Mockito.when(dataSource.getWireGuardMobileExternalAddressType()).thenReturn(ExternalAddressType.EBLOCKER_DYN_DNS);
+        Mockito.when(dataSource.getOpenVpnServerHost()).thenReturn("vpn.example.org");
+        Mockito.when(scriptRunner.runScript(openVpnServerCommand, "status")).thenReturn(0);
+
+        createAndInitService();
+
+        service.setOpenVpnServerStatus(statusIn);
+
+        Mockito.verify(dynDnsService, Mockito.never()).disable();
     }
 
     @Test

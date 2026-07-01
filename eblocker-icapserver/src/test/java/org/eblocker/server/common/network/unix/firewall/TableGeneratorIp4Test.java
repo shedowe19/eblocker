@@ -64,7 +64,7 @@ public class TableGeneratorIp4Test extends TableGeneratorTestBase {
                 parentalControlRedirectIp, parentalControlRedirectHttpPort, parentalControlRedirectHttpsPort,
                 fallbackIp,
                 "malware",
-                1194, localDnsPort, torPort,9053, 256);
+                1194, 51820, localDnsPort, torPort,9053, 256);
 
         deviceIpFilter = Mockito.mock(IpAddressFilter.class);
         Mockito.when(deviceIpFilter.getEnabledDevicesIps()).thenReturn(List.of(enabledDevice, sslEnabledDevice, mobileVpnDevice, mobileVpnLocalAccessDevice, torClientDevice, anonVpnClientDevice));
@@ -273,6 +273,7 @@ public class TableGeneratorIp4Test extends TableGeneratorTestBase {
 
         // ... except for eBlocker Mobile:
         Assert.assertEquals(Action.accept(), filterInput.udpPacket(externalHost, eBlockerIp, 1194, Rule.State.NEW));
+        Assert.assertEquals(Action.accept(), filterInput.udpPacket(externalHost, eBlockerIp, 51820, Rule.State.NEW));
 
         // But eBlocker may establish connections to public addresses and get responses:
         Assert.assertEquals(Action.accept(), filterInput.tcpPacket(externalHost, eBlockerIp, 1234, Rule.State.ESTABLISHED));

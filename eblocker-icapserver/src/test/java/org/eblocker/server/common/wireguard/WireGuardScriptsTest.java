@@ -48,7 +48,7 @@ public class WireGuardScriptsTest {
         Files.createDirectory(fakeBin);
         writeFakeCommand("redis-cli", "printf 'redis-cli %s\\n' \"$*\" >> \"$COMMAND_LOG\"\n");
         writeFakeCommand("wg-quick", "printf 'wg-quick %s\\n' \"$*\" >> \"$COMMAND_LOG\"\nprintf 'wg-quick %s\\n' \"$*\"\n");
-        writeFakeCommand("ip", "printf 'ip %s\\n' \"$*\" >> \"$COMMAND_LOG\"\ncase \"$*\" in\n  'route show default') printf 'default via 192.168.138.1 dev eth0 proto dhcp src 192.168.138.105 metric 100\\n' ;;\n  '-4 route show dev eblocker-mobile proto kernel scope link') printf '10.8.0.0/24 proto kernel scope link src 10.8.0.1\\n' ;;\n  '-6 route show dev eblocker-mobile proto kernel scope link') printf 'fd42:eb10:8::/64 proto kernel metric 256 pref medium\\n' ;;\n  '-6 route show dev eblocker-mobile') printf 'fd42:eb10:8::/64 proto kernel metric 256 pref medium\\n' ;;\n  '-4 address show dev eblocker-mobile') printf '3: eblocker-mobile: <POINTOPOINT> mtu 1420\\n    inet 10.8.0.1/24 scope global eblocker-mobile\\n' ;;\n  '-6 address show dev eblocker-mobile') printf '3: eblocker-mobile: <POINTOPOINT> mtu 1420\\n    inet6 fd42:eb10:8::1/64 scope global\\n' ;;\nesac\n");
+        writeFakeCommand("ip", "printf 'ip %s\\n' \"$*\" >> \"$COMMAND_LOG\"\ncase \"$*\" in\n  'route show default') printf 'default via 192.168.138.1 dev eth0 proto dhcp src 192.168.138.105 metric 100\\n' ;;\n  '-4 route show dev eblocker-mobile proto kernel scope link') printf '10.9.0.0/24 proto kernel scope link src 10.9.0.1\\n' ;;\n  '-6 route show dev eblocker-mobile proto kernel scope link') printf 'fd42:eb10:9::/64 proto kernel metric 256 pref medium\\n' ;;\n  '-6 route show dev eblocker-mobile') printf 'fd42:eb10:9::/64 proto kernel metric 256 pref medium\\n' ;;\n  '-4 address show dev eblocker-mobile') printf '3: eblocker-mobile: <POINTOPOINT> mtu 1420\\n    inet 10.9.0.1/24 scope global eblocker-mobile\\n' ;;\n  '-6 address show dev eblocker-mobile') printf '3: eblocker-mobile: <POINTOPOINT> mtu 1420\\n    inet6 fd42:eb10:9::1/64 scope global\\n' ;;\nesac\n");
         writeFakeCommand("iptables", "printf 'iptables %s\\n' \"$*\" >> \"$COMMAND_LOG\"\ncase \" $* \" in *' -C '*|*' -D '*) exit 1 ;; esac\n");
         writeFakeCommand("ip6tables", "printf 'ip6tables %s\\n' \"$*\" >> \"$COMMAND_LOG\"\ncase \" $* \" in *' -C '*|*' -D '*) exit 1 ;; esac\n");
         writeFakeCommand("wg", "printf 'wg %s\\n' \"$*\" >> \"$COMMAND_LOG\"\ncase \"$1\" in\n  genkey) printf 'private-key\\n' ;;\n  genpsk) printf 'preshared-key\\n' ;;\n  pubkey) read PRIVATE_KEY; printf 'public-for-%s\\n' \"$PRIVATE_KEY\" ;;\nesac\n");
@@ -150,6 +150,66 @@ public class WireGuardScriptsTest {
         Assert.assertEquals(Arrays.asList(
                 "wg-quick down " + configOne,
                 "wg-quick down " + configTwo), readCommandLog());
+    }
+
+    @Test
+    public void wireGuardGenKeyPrintsNewPrivateKey() throws Exception {
+        ProcessResult result = runScript("wireguard_genkey");
+
+        Assert.assertEquals(result.stderr, 0, result.exitCode);
+        Assert.assertEquals("private-key\n", result.stdout);
+        Assert.assertEquals(Arrays.asList("wg genkey"), readCommandLog());
+    }
+
+    @Test
+    public void wireGuardPubKeyDerivesPublicKeyFromPrivateKeyArgument() throws Exception {
+        ProcessResult result = runScript("wireguard_pubkey", "private-key");
+
+        Assert.assertEquals(result.stderr, 0, result.exitCode);
+        Assert.assertEquals("public-for-private-key\n", result.stdout);
+        Assert.assertEquals(Arrays.asList("wg pubkey"), readCommandLog());
+    }
+
+    @Test
+    public void wireGuardGenPskPrintsNewPresharedKey() throws Exception {
+        ProcessResult result = runScript("wireguard_genpsk");
+
+        Assert.assertEquals(result.stderr, 0, result.exitCode);
+        Assert.assertEquals("preshared-key\n", result.stdout);
+        Assert.assertEquals(Arrays.asList("wg genpsk"), readCommandLog());
+    }
+
+    @Test
+    public void wireGuardMobileStartConfiguresIpv4AndIpv6ForwardingAndDns() throws Exception {
+        Path config = tempDir.resolve("eblocker-mobile.conf");
+        Files.writeString(config, "[Interface]\nPrivateKey = private=\n", StandardCharsets.UTF_8);
+
+        ProcessResult result = runScript("wireguard_mobile_start", config.toString());
+
+        Assert.assertEquals(result.stderr, 0, result.exitCode);
+        List<String> commands = readCommandLog();
+        Assert.assertTrue(commands.contains("wg-quick up " + config));
+        Assert.assertTrue(commands.contains("iptables -A FORWARD -i eblocker-mobile -o eth0 -j ACCEPT"));
+        Assert.assertTrue(commands.contains("iptables -t nat -A POSTROUTING -s 10.9.0.0/24 -o eth0 -j MASQUERADE"));
+        Assert.assertTrue(commands.contains("iptables -t nat -A PREROUTING -i eblocker-mobile -p udp --dport 53 -j DNAT --to-destination 10.9.0.1:5300"));
+        Assert.assertTrue(commands.contains("ip6tables -A FORWARD -i eblocker-mobile -o eth0 -j ACCEPT"));
+        Assert.assertTrue(commands.contains("ip6tables -t nat -A POSTROUTING -s fd42:eb10:9::/64 -o eth0 -j MASQUERADE"));
+        Assert.assertTrue(commands.contains("ip6tables -t nat -A PREROUTING -i eblocker-mobile -p udp --dport 53 -j DNAT --to-destination [fd42:eb10:9::1]:5300"));
+    }
+
+    @Test
+    public void wireGuardMobileDownRemovesIpv4AndIpv6ForwardingAndDnsBeforeInterfaceDown() throws Exception {
+        Path config = tempDir.resolve("eblocker-mobile.conf");
+        Files.writeString(config, "[Interface]\nPrivateKey = private=\n", StandardCharsets.UTF_8);
+
+        ProcessResult result = runScript("wireguard_mobile_down", config.toString());
+
+        Assert.assertEquals(result.stderr, 0, result.exitCode);
+        List<String> commands = readCommandLog();
+        Assert.assertTrue(commands.contains("iptables -t nat -D POSTROUTING -s 10.9.0.0/24 -o eth0 -j MASQUERADE"));
+        Assert.assertTrue(commands.contains("ip6tables -t nat -D POSTROUTING -s fd42:eb10:9::/64 -o eth0 -j MASQUERADE"));
+        Assert.assertTrue(commands.contains("ip6tables -t nat -D PREROUTING -i eblocker-mobile -p udp --dport 53 -j DNAT --to-destination [fd42:eb10:9::1]:5300"));
+        Assert.assertEquals("wg-quick down " + config, commands.get(commands.size() - 1));
     }
 
     private ProcessResult runScript(String scriptName, String... arguments) throws IOException, InterruptedException {

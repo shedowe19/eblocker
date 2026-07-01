@@ -125,6 +125,7 @@ import org.eblocker.server.http.controller.NetworkController;
 import org.eblocker.server.http.controller.OpenVpnController;
 import org.eblocker.server.http.controller.OpenVpnServerController;
 import org.eblocker.server.http.controller.WireGuardController;
+import org.eblocker.server.http.controller.WireGuardMobileController;
 import org.eblocker.server.http.controller.PageContextController;
 import org.eblocker.server.http.controller.ParentalControlController;
 import org.eblocker.server.http.controller.ParentalControlFilterListsController;
@@ -157,6 +158,7 @@ import org.eblocker.server.http.service.DashboardCardService;
 import org.eblocker.server.http.service.DeviceService;
 import org.eblocker.server.http.service.MessageCenterService;
 import org.eblocker.server.http.service.OpenVpnServerService;
+import org.eblocker.server.http.service.WireGuardMobileService;
 import org.eblocker.server.http.service.ParentalControlAccessRestrictionsService;
 import org.eblocker.server.http.service.ParentalControlEnforcerService;
 import org.eblocker.server.http.service.ParentalControlSearchEngineConfigService;
@@ -279,6 +281,7 @@ public class EblockerModule extends BaseModule {
         bind(OpenVpnService.class);
         bind(VpnService.class);
         bind(WireGuardService.class);
+        bind(WireGuardMobileService.class);
         bind(ParentalControlAccessRestrictionsService.class);
         bind(ParentalControlEnforcerService.class);
         bind(ParentalControlSearchEngineConfigService.class);
@@ -635,6 +638,12 @@ public class EblockerModule extends BaseModule {
     @Singleton
     public WireGuardController wireGuardController() {
         return ControllerWrapperFactory.wrap(WireGuardController.class);
+    }
+
+    @Provides
+    @Singleton
+    public WireGuardMobileController wireGuardMobileController() {
+        return ControllerWrapperFactory.wrap(WireGuardMobileController.class);
     }
 
     @Provides

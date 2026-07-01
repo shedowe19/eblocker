@@ -93,6 +93,7 @@ public class FirewallConfigurationIp4Test {
                 "139.59.206.208",
                 malwareIpSet,
                 1194,
+                51820,
                 5300,
                 12345,
                 9053,

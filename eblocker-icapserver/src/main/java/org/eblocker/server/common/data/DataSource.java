@@ -442,6 +442,30 @@ public interface DataSource {
 
     void setOpenVpnExternalAddressType(ExternalAddressType type);
 
+    void setWireGuardMobileServerState(boolean state);
+
+    boolean getWireGuardMobileServerState();
+
+    void setWireGuardMobileServerFirstRun(boolean state);
+
+    boolean getWireGuardMobileServerFirstRun();
+
+    void setWireGuardMobileServerHost(String host);
+
+    String getWireGuardMobileServerHost();
+
+    Integer getWireGuardMobileMappedPort();
+
+    void setWireGuardMobileMappedPort(Integer port);
+
+    PortForwardingMode getWireGuardMobilePortForwardingMode();
+
+    void setWireGuardMobilePortForwardingMode(PortForwardingMode mode);
+
+    ExternalAddressType getWireGuardMobileExternalAddressType();
+
+    void setWireGuardMobileExternalAddressType(ExternalAddressType type);
+
     String getResolvedDnsGateway();
 
     void setResolvedDnsGateway(String gateway);

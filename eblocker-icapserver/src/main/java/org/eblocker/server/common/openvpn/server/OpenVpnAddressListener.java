@@ -66,6 +66,8 @@ public class OpenVpnAddressListener implements Runnable, Subscriber {
     private final EblockerDnsServer dnsServer;
     private final NetworkStateMachine networkStateMachine;
     private final PubSubService pubSubService;
+    private final String wireGuardMobileAddressPrefix;
+    private final String wireGuardMobileAddressIp6Prefix;
 
     private final Map<String, IpAddress> ipAddressByDevice;
 
@@ -75,6 +77,8 @@ public class OpenVpnAddressListener implements Runnable, Subscriber {
                                   DeviceService deviceService,
                                   EblockerDnsServer dnsServer,
                                   NetworkStateMachine networkStateMachine,
+                                  @Named("wireguard.mobile.peer.address.prefix") String wireGuardMobileAddressPrefix,
+                                  @Named("wireguard.mobile.peer.address.ip6.prefix") String wireGuardMobileAddressIp6Prefix,
                                   PubSubService pubSubService) {
 
         this.vpnSubnetIp = Ip4Utils.convertIpStringToInt(vpnSubnetIp);
@@ -83,6 +87,8 @@ public class OpenVpnAddressListener implements Runnable, Subscriber {
         this.deviceService = deviceService;
         this.dnsServer = dnsServer;
         this.networkStateMachine = networkStateMachine;
+        this.wireGuardMobileAddressPrefix = wireGuardMobileAddressPrefix;
+        this.wireGuardMobileAddressIp6Prefix = wireGuardMobileAddressIp6Prefix;
         this.pubSubService = pubSubService;
 
         ipAddressByDevice = new HashMap<>();
@@ -186,10 +192,12 @@ public class OpenVpnAddressListener implements Runnable, Subscriber {
         Device device = deviceService.getDeviceByIp(ipAddress);
         if (device != null) {
             ipAddressByDevice.remove(device.getId());
-            device.setIsVpnClient(false);
             List<IpAddress> ipAddresses = device.getIpAddresses();
             ipAddresses.remove(ipAddress);
             device.setIpAddresses(ipAddresses);
+            if (!hasWireGuardMobileAddress(ipAddresses)) {
+                device.setIsVpnClient(false);
+            }
             deviceService.updateDevice(device);
             networkStateMachine.deviceStateChanged();
         } else {
@@ -199,5 +207,21 @@ public class OpenVpnAddressListener implements Runnable, Subscriber {
 
     private void processInterfaceUp() {
         dnsServer.refreshLocalDnsRecords();
+    }
+
+    private boolean hasWireGuardMobileAddress(List<IpAddress> ipAddresses) {
+        if (ipAddresses == null) {
+            return false;
+        }
+        return ipAddresses.stream().anyMatch(this::isWireGuardMobileAddress);
+    }
+
+    private boolean isWireGuardMobileAddress(IpAddress ipAddress) {
+        String address = ipAddress.toString();
+        return hasPrefix(address, wireGuardMobileAddressPrefix) || hasPrefix(address, wireGuardMobileAddressIp6Prefix);
+    }
+
+    private boolean hasPrefix(String address, String prefix) {
+        return prefix != null && !prefix.isEmpty() && address.startsWith(prefix);
     }
 }
