@@ -10,6 +10,11 @@
     <span ng-show="entry.name !== undefined && entry.name !== ''">{{entry.name}}</span>
 </div>
 
+<!-- TYPE -->
+<div flex flex-gt-xs="15" hide-xs>
+    <span>{{('ADMINCONSOLE.VPN_CONNECT.TYPE.' + entry.vpnType) | translate}}</span>
+</div>
+
 <!-- DESCRIPTION -->
 <div flex hide-xs>
     <span ng-show="entry.description !== undefined && entry.description !== ''">{{entry.description}}</span>

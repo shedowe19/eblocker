@@ -14,22 +14,27 @@
             </div>
 
             <div layout="row" layout-xs="column" flex>
-                <div flex-gt-xs="33">
+                <div flex-gt-xs="25">
                     <eb-label-container is-edit="vm.editable(vm.profile)" edit-callback="vm.editName($event, vm.profile)"
                                         label="{{'ADMINCONSOLE.VPN_CONNECT.DETAILS.LABEL_NAME' | translate}}" config="vm.profileName"></eb-label-container>
                 </div>
 
-                <div flex-gt-xs="33">
+                <div flex-gt-xs="25">
+                    <div class="config-row-label">{{'ADMINCONSOLE.VPN_CONNECT.DETAILS.LABEL_TYPE' | translate}}</div>
+                    <div>{{('ADMINCONSOLE.VPN_CONNECT.TYPE.' + vm.profile.vpnType) | translate}}</div>
+                </div>
+
+                <div flex-gt-xs="25">
                     <eb-label-container is-edit="vm.editable(vm.profile)" edit-callback="vm.editDescription($event, vm.profile)"
                                         label="{{'ADMINCONSOLE.VPN_CONNECT.DETAILS.LABEL_DESCRIPTION' | translate}}" config="vm.profileDescription"></eb-label-container>
                 </div>
 
-                <div flex-gt-xs="33">
+                <div flex-gt-xs="25">
                     <eb-label-container label="{{'ADMINCONSOLE.VPN_CONNECT.DETAILS.LABEL_CONFIG_VERSION' | translate}}" config="vm.profileConfigVersion"></eb-label-container>
                 </div>
             </div>
 
-            <div layout="row" layout-xs="column" flex>
+            <div layout="row" layout-xs="column" flex ng-if="!vm.isWireGuard">
                 <div flex-gt-xs="33">
                     <eb-label-container is-edit="vm.editable(vm.profile)" edit-callback="vm.editUserName($event, vm.profile)"
                                         label="{{'ADMINCONSOLE.VPN_CONNECT.DETAILS.LABEL_USERNAME' | translate}}" config="vm.profileUsername"></eb-label-container>

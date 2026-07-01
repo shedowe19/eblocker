@@ -64,6 +64,7 @@ import org.eblocker.server.http.controller.MobileDnsCheckController;
 import org.eblocker.server.http.controller.NetworkController;
 import org.eblocker.server.http.controller.OpenVpnController;
 import org.eblocker.server.http.controller.OpenVpnServerController;
+import org.eblocker.server.http.controller.WireGuardController;
 import org.eblocker.server.http.controller.PageContextController;
 import org.eblocker.server.http.controller.ParentalControlController;
 import org.eblocker.server.http.controller.ParentalControlFilterListsController;
@@ -146,6 +147,7 @@ public class EblockerHttpsServer implements Preprocessor {
     private final AppWhitelistModuleController appModulesController;
     private final AuthenticationController authenticationController;
     private final OpenVpnController openVpnController;
+    private final WireGuardController wireGuardController;
     private final OpenVpnServerController openVpnServerController;
     private final ControlBarController controlBarController;
     private final SplashController splashController;
@@ -214,6 +216,7 @@ public class EblockerHttpsServer implements Preprocessor {
                                MessageCenterController messageCenterController,
                                NetworkController networkController,
                                OpenVpnController openVpnController,
+                               WireGuardController wireGuardController,
                                OpenVpnServerController openVpnServerController,
                                PageContextController pageContextController,
                                ParentalControlController parentalControlController,
@@ -306,6 +309,7 @@ public class EblockerHttpsServer implements Preprocessor {
         this.appModulesController = appModulesController;
 
         this.openVpnController = openVpnController;
+        this.wireGuardController = wireGuardController;
         this.openVpnServerController = openVpnServerController;
 
         this.controlBarController = controlBarController;
@@ -1370,6 +1374,60 @@ public class EblockerHttpsServer implements Preprocessor {
                 .uri("/api/adminconsole/vpn/profile/status/{device}", openVpnController)
                 .action("getVpnStatusByDevice", HttpMethod.GET)
                 .name("adminconsole.vpn.getVpnStatusByDevice.route");
+
+        // ** New Adminconsole: WireGuard VPN provider profiles
+        server
+                .uri("/api/adminconsole/wireguard/profiles", wireGuardController)
+                .action("getProfiles", HttpMethod.GET)
+                .name("adminconsole.wireguard.profiles.get.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile", wireGuardController)
+                .action("createProfile", HttpMethod.POST)
+                .name("adminconsole.wireguard.profiles.create.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}", wireGuardController)
+                .action("getProfile", HttpMethod.GET)
+                .name("adminconsole.wireguard.profile.get.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}", wireGuardController)
+                .action("updateProfile", HttpMethod.PUT)
+                .name("adminconsole.wireguard.profile.update.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}", wireGuardController)
+                .action("deleteProfile", HttpMethod.DELETE)
+                .name("adminconsole.wireguard.profile.delete.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/config", wireGuardController)
+                .action("getProfileConfig", HttpMethod.GET)
+                .name("adminconsole.wireguard.profile.get.config.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/config", wireGuardController)
+                .action("uploadProfileConfig", HttpMethod.PUT)
+                .name("adminconsole.wireguard.profile.create.config.route");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/config/{option}", wireGuardController)
+                .action("uploadProfileConfigOption", HttpMethod.PUT)
+                .name("adminconsole.wireguard.profile.set.config.option");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/status", wireGuardController)
+                .action("setVpnStatus", HttpMethod.PUT)
+                .name("adminconsole.wireguard.profile.set.status");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/status", wireGuardController)
+                .action("getVpnStatus", HttpMethod.GET)
+                .name("adminconsole.wireguard.profile.get.status");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/status/{device}", wireGuardController)
+                .action("getVpnDeviceStatus", HttpMethod.GET)
+                .name("adminconsole.wireguard.profile.status.device.get");
+        server
+                .uri("/api/adminconsole/wireguard/profile/{id}/status/{device}", wireGuardController)
+                .action("setVpnDeviceStatus", HttpMethod.PUT)
+                .name("adminconsole.wireguard.profile.status.device.set");
+        server
+                .uri("/api/adminconsole/wireguard/profile/status/{device}", wireGuardController)
+                .action("getVpnStatusByDevice", HttpMethod.GET)
+                .name("adminconsole.wireguard.getVpnStatusByDevice.route");
 
         // ** New Adminconsole: TOR
         server

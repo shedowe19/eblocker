@@ -1169,8 +1169,8 @@
                 },
                 "TAB_1": {
                     "SELECT_SERVICE": "VPN-Anbieter auswählen",
-                    "SELECT_SERVICE_TEXT_1": "Dieser Wizard unterstützt dich bei der Einrichtung einer VPN-Verbindung zu einem OpenVPN Anbieter.",
-                    "SELECT_SERVICE_TEXT_2": "Du brauchst dazu eine OpenVPN-Konfiguration von einem VPN-Anbieter.",
+                    "SELECT_SERVICE_TEXT_1": "Dieser Wizard unterstützt dich bei der Einrichtung einer VPN-Verbindung zu einem OpenVPN- oder WireGuard-Anbieter.",
+                    "SELECT_SERVICE_TEXT_2": "Du brauchst dazu eine OpenVPN- (*.ovpn) oder WireGuard-Konfiguration (*.conf) von einem VPN-Anbieter.",
                     "SELECT_SERVICE_TEXT_3_LABEL": "Liste kompatibler VPN-Anbieter",
                     "SELECT_SERVICE_TEXT_3_POST": "für dich erstellt.",
                     "SELECT_SERVICE_TEXT_3_PRE": "Wir haben bereits eine ",
@@ -1195,7 +1195,7 @@
                         "FILE_STATUS_ERROR": "Die hochgeladene Datei enthält keine geeigneten Informationen für diese Option. Bitte überprüfe, ob die richtige Datei hochgeladen wurde."
                     },
                     "UPLOAD_CONFIG": "Konfiguration hochladen",
-                    "UPLOAD_TEXT_1": "Lade die OpenVPN Konfiguration deines Anbieters hoch. Der Name der Konfigurationsdatei endet in der Regel mit *.ovpn."
+                    "UPLOAD_TEXT_1": "Lade die OpenVPN- (*.ovpn) oder WireGuard-Konfiguration (*.conf) deines Anbieters hoch."
                 },
                 "TAB_3": {
                     "ACTIVE_OPTIONS_HEADER": "Verwendete Einstellungen",
@@ -3295,6 +3295,10 @@
             "ACTION": {
                 "ADD_BUTTON": "Neuer VPN Anbieter",
                 "ADD_BUTTON_XS": "Neu",
+                "ADD_OPENVPN_BUTTON": "Neuer OpenVPN-Anbieter",
+                "ADD_OPENVPN_BUTTON_XS": "OpenVPN",
+                "ADD_WIREGUARD_BUTTON": "Neuer WireGuard-Anbieter",
+                "ADD_WIREGUARD_BUTTON_XS": "WireGuard",
                 "REMOVE": "{num, select, 0{Profil löschen} 1{{num} Profil löschen} other{{num} Profile löschen}}"
             },
             "DETAILS": {
@@ -3319,6 +3323,7 @@
                 "LABEL_NAME": "VPN Profil Name",
                 "LABEL_NAME_SERVER_ENABLED": "VPN DNS-Server verwenden falls verfügbar",
                 "LABEL_PASSWORD": "Passwort",
+                "LABEL_TYPE": "VPN-Typ",
                 "LABEL_USERNAME": "Benutzername",
                 "TEXT_EXISTING_CONNECTIONS": "Dieses VPN Profil wird derzeit von mindestens einem Gerät genutzt"
             },
@@ -3327,13 +3332,18 @@
                 "COLUMN": {
                     "DESCRIPTION": "Beschreibung",
                     "IN_CONTROLBAR": "Verfügbar für alle Geräte",
-                    "NAME": "Name"
+                    "NAME": "Name",
+                    "TYPE": "Typ"
                 }
             },
             "TOOLTIP": {
                 "REMOVE_BUTTON": "Lösche markierte VPN Profile.",
                 "VPN_DISABLED": "Nicht aktiviert: Du kannst dieses Profil in den Details aktivieren.",
                 "VPN_ENABLED": "Aktiviert: Du kannst dieses Profil in den Details deaktivieren."
+            },
+            "TYPE": {
+                "OPENVPN": "OpenVPN",
+                "WIREGUARD": "WireGuard"
             }
         },
         "VPN_HOME": {
@@ -3626,15 +3636,15 @@
             },
             "VPN": {
                 "DETAILS": {
-                    "P1": "Wähle \"{{ 'ADMINCONSOLE.VPN_CONNECT.ACTION.ADD_BUTTON' | translate }}\" und es öffnet sich der Assistent für neue VPN Verbindungen. Dort musst du die OpenVPN Konfigurationsdatei(en) deines VPN Providers hochladen. Der eBlocker prüft alle Einstellungen des Skriptes und verwirft gegebenenfalls einige nicht unterstützte Einträge. Nach Eingabe von Name und Passwort, die du von deinem VPN Provider erhalten hast, und einem Namen für das eben angelegte Profil kannst du VPN nutzen, indem du die Symbolleiste verwendest, um das VPN zu aktivieren."
+                    "P1": "Wähle \"{{ 'ADMINCONSOLE.VPN_CONNECT.ACTION.ADD_OPENVPN_BUTTON' | translate }}\" für einen OpenVPN-Anbieter oder \"{{ 'ADMINCONSOLE.VPN_CONNECT.ACTION.ADD_WIREGUARD_BUTTON' | translate }}\" für einen WireGuard-Anbieter. Danach öffnet sich der Assistent für neue VPN-Verbindungen. Lade die passende Anbieter-Konfiguration hoch; der eBlocker prüft die Einstellungen und verwirft gegebenenfalls nicht unterstützte Einträge. Nach Eingabe der erforderlichen Daten und eines Profilnamens kannst du VPN über die Symbolleiste aktivieren."
                 },
                 "OVERVIEW": {
-                    "P1": "Du kannst anstelle des Tor-Netzwerks auch andere VPN-Anbieter zur IP-Anonymisierung nutzen, die das OpenVPN Protokoll unterstützen. Bitte beachte, dass dir in der Regel durch alternative VPN-Anbieter zusätzliche Kosten entstehen.",
+                    "P1": "Du kannst anstelle des Tor-Netzwerks auch VPN-Anbieter zur IP-Anonymisierung nutzen, die OpenVPN oder WireGuard unterstützen. Bitte beachte, dass dir durch alternative VPN-Anbieter zusätzliche Kosten entstehen können.",
                     "P2_LIST_TEXT": "für dich zusammengestellt.",
                     "P2_LIST_URL": "https://eBlocker.org/de/vpn_provider",
                     "P2_PRE": "Wir haben bereits einige VPN-Anbieter auf Kompatibilität getestet und",
                     "P3_POST": ".",
-                    "P3_PRE": "Grundsätzlich sollten jedoch die meisten OpenVPN-Anbieter problemlos funktionieren. Falls mit deinem Anbieter dennoch Probleme auftreten, teile dies gerne im Forum.",
+                    "P3_PRE": "Grundsätzlich sollten jedoch die meisten OpenVPN- und WireGuard-Anbieter mit Standardkonfigurationen problemlos funktionieren. Falls mit deinem Anbieter dennoch Probleme auftreten, teile dies gerne im Forum.",
                     "P3_SUPPORT": "",
                     "TITLE": "Virtual Private Network (VPN)"
                 }

@@ -61,6 +61,11 @@ function Controller(logger, $interval, $q, StateService, STATES, ArrayUtilsServi
     };
 
     function updateDisplayData(profile) {
+        profile.loginCredentials = profile.loginCredentials || {};
+        vm.isWireGuard = profile.vpnType === VpnService.WIREGUARD;
+        vm.profileType = {
+            value: 'ADMINCONSOLE.VPN_CONNECT.TYPE.' + profile.vpnType
+        };
         vm.profileName = {
             value: profile.name
         };

@@ -24,6 +24,7 @@ import org.eblocker.server.common.data.openvpn.OpenVpnProfile;
 import org.eblocker.server.common.data.openvpn.VpnLoginCredentials;
 import org.eblocker.server.common.data.openvpn.VpnProfile;
 import org.eblocker.server.common.data.openvpn.VpnStatus;
+import org.eblocker.server.common.data.wireguard.WireGuardProfile;
 import org.eblocker.server.common.openvpn.configuration.OpenVpnConfiguration;
 import org.eblocker.server.common.openvpn.configuration.OpenVpnConfigurationParser;
 import org.eblocker.server.common.openvpn.configuration.OpenVpnConfigurationVersion0;
@@ -366,7 +367,22 @@ public class OpenVpnServiceTest {
 
         Mockito.verify(dataSource).save(Mockito.any(OpenVpnProfile.class), Mockito.anyInt());
         Assert.assertNotNull(profile.getId());
+        Assert.assertEquals(Integer.valueOf(3), profile.getId());
         Assert.assertEquals(PASSWORD_MASK, profile.getLoginCredentials().getPassword());
+    }
+
+    @Test
+    public void saveNewProfileUsesSharedIdAboveExistingWireGuardProfiles() throws IOException {
+        Mockito.when(dataSource.nextId(OpenVpnProfile.class)).thenReturn(1);
+        Mockito.when(dataSource.getAll(WireGuardProfile.class)).thenReturn(Collections.singletonList(new WireGuardProfile(42, "wireguard")));
+        OpenVpnService service = createService();
+        service.init();
+
+        OpenVpnProfile profile = service.saveProfile(createMockProfile(null, "name", "username", "password"));
+
+        Assert.assertEquals(Integer.valueOf(43), profile.getId());
+        Mockito.verify(dataSource).setIdSequence(OpenVpnProfile.class, 43);
+        Mockito.verify(dataSource).save(Mockito.any(OpenVpnProfile.class), Mockito.eq(43));
     }
 
     @Test

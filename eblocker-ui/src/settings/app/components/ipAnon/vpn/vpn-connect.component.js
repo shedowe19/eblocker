@@ -27,6 +27,12 @@ function Controller(VpnService, StateService, STATES, DialogService, TableServic
     const vm = this;
 
     vm.newVpnProfile = newVpnProfile;
+    vm.newOpenVpnProfile = function() {
+        return newVpnProfile(VpnService.OPENVPN);
+    };
+    vm.newWireGuardProfile = function() {
+        return newVpnProfile(VpnService.WIREGUARD);
+    };
 
     let dialog = {
         step: 0,
@@ -58,6 +64,12 @@ function Controller(VpnService, StateService, STATES, DialogService, TableServic
             isSortable: true,
             flexGtXs: 35,
             sortingKey: 'name'
+        },
+        {
+            label: 'ADMINCONSOLE.VPN_CONNECT.TABLE.COLUMN.TYPE',
+            isSortable: true,
+            flexGtXs: 15,
+            sortingKey: 'vpnType'
         },
         {
             label: 'ADMINCONSOLE.VPN_CONNECT.TABLE.COLUMN.DESCRIPTION',
@@ -104,12 +116,14 @@ function Controller(VpnService, StateService, STATES, DialogService, TableServic
         });
     }
 
-    function newVpnProfile() {
+    function newVpnProfile(vpnType) {
+        const type = vpnType || VpnService.OPENVPN;
         const profile = {
             enabled: true,
-            temporary: true
+            temporary: true,
+            vpnType: type
         };
-        VpnService.createProfile(profile).then(function(response) {
+        VpnService.createProfile(profile, type).then(function(response) {
             showEditDialog(true, response.data, null);
         });
     }

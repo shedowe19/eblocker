@@ -21,7 +21,7 @@ import org.eblocker.server.common.data.openvpn.OpenVpnProfile;
 import org.eblocker.server.common.data.openvpn.VpnProfile;
 import org.eblocker.server.common.network.NetworkStateMachine;
 import org.eblocker.server.common.network.TorController;
-import org.eblocker.server.common.openvpn.OpenVpnService;
+import org.eblocker.server.common.vpn.VpnService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,17 +33,17 @@ public class AnonymousServiceTest {
 
     private AnonymousService anonymousService;
     private DeviceService deviceService;
-    private OpenVpnService openVpnService;
+    private VpnService vpnService;
     private TorController torController;
     private NetworkStateMachine networkStateMachine;
 
     @Before
     public void setup() {
         deviceService = Mockito.mock(DeviceService.class);
-        openVpnService = Mockito.mock(OpenVpnService.class);
+        vpnService = Mockito.mock(VpnService.class);
         torController = Mockito.mock(TorController.class);
         networkStateMachine = Mockito.mock(NetworkStateMachine.class);
-        anonymousService = new AnonymousService(deviceService, openVpnService, torController, networkStateMachine);
+        anonymousService = new AnonymousService(deviceService, vpnService, torController, networkStateMachine);
     }
 
     @Test
@@ -59,19 +59,19 @@ public class AnonymousServiceTest {
         Mockito.when(deviceService.getDevices(false)).thenReturn(Arrays.asList(devices));
 
         VpnProfile vpnProfile = new OpenVpnProfile(1, "test");
-        Mockito.when(openVpnService.getVpnProfileById(1)).thenReturn(vpnProfile);
+        Mockito.when(vpnService.getVpnProfileById(1)).thenReturn(vpnProfile);
 
         anonymousService.init();
 
         // check device 4 is enabled for vpn 1
         Mockito.verify(deviceService).updateDevice(devices[4]);
-        Mockito.verify(openVpnService).routeClientThroughVpnTunnel(devices[4], vpnProfile);
+        Mockito.verify(vpnService).routeClientThroughVpnTunnel(devices[4], vpnProfile);
         Mockito.verify(torController).removeDeviceNotUsingTor(devices[4]);
         Mockito.verify(networkStateMachine).deviceStateChanged(devices[4]);
 
         // check device 5 is disabled for vpn 2
         Mockito.verify(deviceService).updateDevice(devices[5]);
-        Mockito.verify(openVpnService).restoreNormalRoutingForClient(devices[5]);
+        Mockito.verify(vpnService).restoreNormalRoutingForClient(devices[5]);
         Mockito.verify(networkStateMachine).deviceStateChanged(devices[4]);
     }
 
@@ -85,7 +85,7 @@ public class AnonymousServiceTest {
 
         // check state changes are correct
         Mockito.verify(deviceService).updateDevice(device);
-        Mockito.verify(openVpnService).restoreNormalRoutingForClient(device);
+        Mockito.verify(vpnService).restoreNormalRoutingForClient(device);
         Mockito.verify(torController).addDeviceUsingTor(device);
         Mockito.verify(networkStateMachine).deviceStateChanged(device);
 
@@ -125,7 +125,7 @@ public class AnonymousServiceTest {
 
         // check state changes are correct
         Mockito.verify(deviceService).updateDevice(device);
-        Mockito.verify(openVpnService).routeClientThroughVpnTunnel(device, vpnProfile);
+        Mockito.verify(vpnService).routeClientThroughVpnTunnel(device, vpnProfile);
         Mockito.verify(torController).removeDeviceNotUsingTor(device);
         Mockito.verify(networkStateMachine).deviceStateChanged(device);
 
@@ -146,7 +146,7 @@ public class AnonymousServiceTest {
 
         // check state changes are correct
         Mockito.verify(deviceService).updateDevice(device);
-        Mockito.verify(openVpnService).restoreNormalRoutingForClient(device);
+        Mockito.verify(vpnService).restoreNormalRoutingForClient(device);
         Mockito.verify(networkStateMachine).deviceStateChanged(device);
 
         Assert.assertFalse(device.isUseAnonymizationService());
@@ -166,7 +166,7 @@ public class AnonymousServiceTest {
 
         // check state changes are correct
         Mockito.verify(deviceService).updateDevice(device);
-        Mockito.verify(openVpnService).restoreNormalRoutingForClient(device);
+        Mockito.verify(vpnService).restoreNormalRoutingForClient(device);
         Mockito.verify(torController).addDeviceUsingTor(device);
         Mockito.verify(networkStateMachine).deviceStateChanged(device);
 
@@ -188,7 +188,7 @@ public class AnonymousServiceTest {
 
         // check state changes are correct
         Mockito.verify(deviceService).updateDevice(device);
-        Mockito.verify(openVpnService).routeClientThroughVpnTunnel(device, vpnProfile);
+        Mockito.verify(vpnService).routeClientThroughVpnTunnel(device, vpnProfile);
         Mockito.verify(torController).removeDeviceNotUsingTor(device);
         Mockito.verify(networkStateMachine).deviceStateChanged(device);
 

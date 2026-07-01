@@ -17,61 +17,82 @@
 export default function VpnService($http, $q) {
     'ngInject';
 
-    const PATH = '/api/adminconsole/vpn/';
-    const PROFILE = PATH + 'profile';
-    const PATH_BY_ID = PROFILE + '/status/';
+    const OPENVPN = 'OPENVPN';
+    const WIREGUARD = 'WIREGUARD';
+    const OPENVPN_PATH = '/api/adminconsole/vpn/';
+    const WIREGUARD_PATH = '/api/adminconsole/wireguard/';
+    const OPENVPN_PROFILE = OPENVPN_PATH + 'profile';
+    const WIREGUARD_PROFILE = WIREGUARD_PATH + 'profile';
 
-    function createProfile(profile) {
-        return $http.post(PROFILE, profile).then(standardSuccess, standardError);
+    function createProfile(profile, vpnType) {
+        const type = vpnType || profile.vpnType || OPENVPN;
+        return $http.post(profileBase(type), profile).then(decorateSuccess(type), standardError);
     }
 
     function getProfile(profile) {
-        return $http.get(PROFILE + '/' + profile.id).then(standardSuccess, standardError);
+        return $http.get(profileBase(profile) + '/' + profile.id).then(decorateSuccess(profile), standardError);
     }
 
     function getProfiles() {
-        return $http.get(PROFILE + 's').then(standardSuccess, standardError);
+        return $q.all([
+            $http.get(OPENVPN_PROFILE + 's'),
+            $http.get(WIREGUARD_PROFILE + 's')
+        ]).then(function(responses) {
+            const openVpnProfiles = decorateProfiles(responses[0].data, OPENVPN);
+            const wireGuardProfiles = decorateProfiles(responses[1].data, WIREGUARD);
+            responses[0].data = openVpnProfiles.concat(wireGuardProfiles);
+            return responses[0];
+        }, standardError);
     }
 
     function updateProfile(profile) {
-        return $http.put(PROFILE + '/' + profile.id, profile).then(standardSuccess, standardError);
+        return $http.put(profileBase(profile) + '/' + profile.id, profile).
+        then(decorateSuccess(profile), standardError);
     }
 
     function deleteProfile(profile) {
-        return $http.delete(PROFILE + '/' + profile.id).then(standardSuccess, standardError);
+        return $http.delete(profileBase(profile) + '/' + profile.id).then(standardSuccess, standardError);
     }
 
     function getProfileConfig(profile) {
-        return $http.get(PROFILE + '/' + profile.id + '/config').then(standardSuccess, standardError);
+        return $http.get(profileBase(profile) + '/' + profile.id + '/config').then(standardSuccess, standardError);
     }
 
     function uploadProfileConfig(profile, config) {
-        return $http.put(PROFILE + '/' + profile.id + '/config', config).then(standardSuccess, standardError);
+        return $http.put(profileBase(profile) + '/' + profile.id + '/config', config).
+        then(standardSuccess, standardError);
     }
 
     function uploadProfileConfigOption(profile, optionParam, optionContent) {
-        return $http.put(PROFILE + '/' + profile.id + '/config/' + optionParam, optionContent).
+        return $http.put(profileBase(profile) + '/' + profile.id + '/config/' + optionParam, optionContent).
         then(standardSuccess, standardError);
     }
 
     function setVpnStatus(profile, status) {
-        return $http.put(PROFILE + '/' + profile.id + '/status', status).then(standardSuccess, standardError);
+        return $http.put(profileBase(profile) + '/' + profile.id + '/status', status).
+        then(standardSuccess, standardError);
     }
 
     function getVpnStatus(profile) {
-        return $http.get(PROFILE + '/' + profile.id + '/status').then(standardSuccess, standardError);
+        return $http.get(profileBase(profile) + '/' + profile.id + '/status').then(standardSuccess, standardError);
     }
 
     function getVpnDeviceStatus(profile, deviceId) {
-        return $http.get(PROFILE + '/' + profile.id + '/status/' + deviceId).then(standardSuccess, standardError);
+        return $http.get(profileBase(profile) + '/' + profile.id + '/status/' + deviceId).
+        then(standardSuccess, standardError);
     }
 
     function getVpnStatusByDeviceId(deviceId) {
-        return $http.get(PATH_BY_ID + deviceId).then(standardSuccess, standardError);
+        return $q.all([
+            $http.get(OPENVPN_PROFILE + '/status/' + deviceId),
+            $http.get(WIREGUARD_PROFILE + '/status/' + deviceId)
+        ]).then(function(responses) {
+            return responses[0].data ? responses[0] : responses[1];
+        }, standardError);
     }
 
     function setVpnDeviceStatus(profile, deviceId, status) {
-        return $http.put(PROFILE + '/' + profile.id + '/status/' + deviceId, status).
+        return $http.put(profileBase(profile) + '/' + profile.id + '/status/' + deviceId, status).
         then(standardSuccess, standardError);
     }
 
@@ -92,6 +113,8 @@ export default function VpnService($http, $q) {
     }
 
     return {
+        OPENVPN: OPENVPN,
+        WIREGUARD: WIREGUARD,
         getProfile: getProfile,
         getProfiles: getProfiles,
         createProfile: createProfile,
@@ -107,6 +130,33 @@ export default function VpnService($http, $q) {
         updateCompletionStatus: updateCompletionStatus,
         getVpnStatusByDeviceId: getVpnStatusByDeviceId
     };
+
+    function profileBase(profileOrType) {
+        const type = angular.isString(profileOrType) ? profileOrType : profileOrType.vpnType;
+        return type === WIREGUARD ? WIREGUARD_PROFILE : OPENVPN_PROFILE;
+    }
+
+    function decorateSuccess(profileOrType) {
+        return function(response) {
+            const type = angular.isString(profileOrType) ? profileOrType : profileOrType.vpnType;
+            response.data = decorateProfile(response.data, type || OPENVPN);
+            return response;
+        };
+    }
+
+    function decorateProfiles(profiles, type) {
+        return profiles.map(function(profile) {
+            return decorateProfile(profile, type);
+        });
+    }
+
+    function decorateProfile(profile, type) {
+        if (angular.isObject(profile)) {
+            profile.vpnType = type;
+            profile.loginCredentials = profile.loginCredentials || {};
+        }
+        return profile;
+    }
 
     function standardSuccess(response) {
         return response;

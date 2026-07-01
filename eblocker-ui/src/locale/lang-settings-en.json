@@ -1169,8 +1169,8 @@
                 },
                 "TAB_1" : {
                     "SELECT_SERVICE" : "Select VPN provider",
-                    "SELECT_SERVICE_TEXT_1" : "This configuration wizard will help you to set up a VPN connection to an external OpenVPN provider.",
-                    "SELECT_SERVICE_TEXT_2" : "To proceed, you need an OpenVPN configuration file from a VPN provider.",
+                    "SELECT_SERVICE_TEXT_1" : "This configuration wizard will help you to set up a VPN connection to an external OpenVPN or WireGuard provider.",
+                    "SELECT_SERVICE_TEXT_2" : "To proceed, you need an OpenVPN (*.ovpn) or WireGuard (*.conf) configuration file from a VPN provider.",
                     "SELECT_SERVICE_TEXT_3_LABEL" : "tested and compiled a list of compatible VPN providers",
                     "SELECT_SERVICE_TEXT_3_POST" : " for your convenience.",
                     "SELECT_SERVICE_TEXT_3_PRE" : "We have already ",
@@ -1195,7 +1195,7 @@
                         "FILE_STATUS_ERROR" : "Uploaded file contains no suitable information for this option. Please make sure the correct file is uploaded."
                     },
                     "UPLOAD_CONFIG" : "Upload Config",
-                    "UPLOAD_TEXT_1" : "Upload the OpenVPN configuration file you have received from your VPN provider. In general, it is named *.ovpn."
+                    "UPLOAD_TEXT_1" : "Upload the OpenVPN (*.ovpn) or WireGuard (*.conf) configuration file you have received from your VPN provider."
                 },
                 "TAB_3" : {
                     "ACTIVE_OPTIONS_HEADER" : "Used Settings",
@@ -3295,6 +3295,10 @@
             "ACTION" : {
                 "ADD_BUTTON" : "New VPN Provider",
                 "ADD_BUTTON_XS" : "New",
+                "ADD_OPENVPN_BUTTON" : "New OpenVPN Provider",
+                "ADD_OPENVPN_BUTTON_XS" : "OpenVPN",
+                "ADD_WIREGUARD_BUTTON" : "New WireGuard Provider",
+                "ADD_WIREGUARD_BUTTON_XS" : "WireGuard",
                 "REMOVE" : "{num, select, 0{Remove Profile} 1{Remove {num} Profile} other{Remove {num} Profiles}}"
             },
             "DETAILS" : {
@@ -3319,6 +3323,7 @@
                 "LABEL_NAME" : "VPN Profile Name",
                 "LABEL_NAME_SERVER_ENABLED" : "Use VPN provider name servers (if available)",
                 "LABEL_PASSWORD" : "Password",
+                "LABEL_TYPE" : "VPN type",
                 "LABEL_USERNAME" : "Username",
                 "TEXT_EXISTING_CONNECTIONS": "This VPN profile is currently in use by at least on device"
             },
@@ -3327,13 +3332,18 @@
                 "COLUMN" : {
                     "DESCRIPTION" : "Description",
                     "IN_CONTROLBAR" : "Available for all devices",
-                    "NAME" : "Name"
+                    "NAME" : "Name",
+                    "TYPE" : "Type"
                 }
             },
             "TOOLTIP" : {
                 "REMOVE_BUTTON" : "Delete selected VPN profiles.",
                 "VPN_DISABLED" : "This VPN profile is disabled, go to details to enable.",
                 "VPN_ENABLED" : "This VPN profile is enabled, go to details to disable."
+            },
+            "TYPE" : {
+                "OPENVPN" : "OpenVPN",
+                "WIREGUARD" : "WireGuard"
             }
         },
         "VPN_HOME" : {
@@ -3626,15 +3636,15 @@
             },
             "VPN" : {
                 "DETAILS" : {
-                    "P1" : "As you select \"{{ 'ADMINCONSOLE.VPN_CONNECT.ACTION.ADD_BUTTON' | translate }}\", the wizard for new VPN connections opens, there you have to upload the OpenVPN configuration file(s) of your VPN provider. The eBlocker checks all settings of the script and discards some unsupported entries if necessary, after entering the name and password you receive from your VPN provider and a name for the newly created profile you can use VPN by using the toolbar again to activate the VPN there."
+                    "P1" : "Select \"{{ 'ADMINCONSOLE.VPN_CONNECT.ACTION.ADD_OPENVPN_BUTTON' | translate }}\" for an OpenVPN provider or \"{{ 'ADMINCONSOLE.VPN_CONNECT.ACTION.ADD_WIREGUARD_BUTTON' | translate }}\" for a WireGuard provider. The wizard for new VPN connections opens. Upload the matching provider configuration; eBlocker checks the settings and discards unsupported entries if necessary. After entering the required data and a profile name, you can activate VPN through the toolbar."
                 },
                 "OVERVIEW" : {
-                    "P1" : "Instead of Tor you can also use other VPN providers for IP anonymization that support the OpenVPN protocol. Please note that you may incur additional costs through alternative VPN providers.",
+                    "P1" : "Instead of Tor you can also use VPN providers for IP anonymization that support OpenVPN or WireGuard. Please note that alternative VPN providers may incur additional costs.",
                     "P2_LIST_TEXT" : "compiled them for you.",
                     "P2_LIST_URL" : "https://eBlocker.org/en/vpn_provider",
                     "P2_PRE" : "We have already tested some VPN providers for compatibility and ",
                     "P3_POST" : ".",
-                    "P3_PRE" : "Basically, however, most OpenVPN providers should work without problems. If you still have problems with your provider, please share this in the forum.",
+                    "P3_PRE" : "Most OpenVPN and WireGuard providers with standard configurations should work without problems. If you still have problems with your provider, please share this in the forum.",
                     "P3_SUPPORT" : "",
                     "TITLE" : "Virtual Private Network (VPN)"
                 }

@@ -71,6 +71,8 @@ import org.eblocker.server.common.openvpn.OpenVpnClientFactory;
 import org.eblocker.server.common.openvpn.OpenVpnService;
 import org.eblocker.server.common.openvpn.VpnKeepAliveFactory;
 import org.eblocker.server.common.openvpn.server.OpenVpnAddressListener;
+import org.eblocker.server.common.vpn.VpnService;
+import org.eblocker.server.common.wireguard.WireGuardService;
 import org.eblocker.server.common.pubsub.JedisPubSubService;
 import org.eblocker.server.common.pubsub.PubSubService;
 import org.eblocker.server.common.registration.DeviceRegistrationLicenseState;
@@ -122,6 +124,7 @@ import org.eblocker.server.http.controller.MobileDnsCheckController;
 import org.eblocker.server.http.controller.NetworkController;
 import org.eblocker.server.http.controller.OpenVpnController;
 import org.eblocker.server.http.controller.OpenVpnServerController;
+import org.eblocker.server.http.controller.WireGuardController;
 import org.eblocker.server.http.controller.PageContextController;
 import org.eblocker.server.http.controller.ParentalControlController;
 import org.eblocker.server.http.controller.ParentalControlFilterListsController;
@@ -274,6 +277,8 @@ public class EblockerModule extends BaseModule {
         bind(OpenVpnAddressListener.class);
         bind(OpenVpnServerService.class);
         bind(OpenVpnService.class);
+        bind(VpnService.class);
+        bind(WireGuardService.class);
         bind(ParentalControlAccessRestrictionsService.class);
         bind(ParentalControlEnforcerService.class);
         bind(ParentalControlSearchEngineConfigService.class);
@@ -624,6 +629,12 @@ public class EblockerModule extends BaseModule {
     @Singleton
     public OpenVpnController openVpnController() {
         return ControllerWrapperFactory.wrap(OpenVpnController.class);
+    }
+
+    @Provides
+    @Singleton
+    public WireGuardController wireGuardController() {
+        return ControllerWrapperFactory.wrap(WireGuardController.class);
     }
 
     @Provides

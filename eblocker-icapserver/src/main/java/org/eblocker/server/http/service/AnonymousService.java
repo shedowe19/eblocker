@@ -23,13 +23,13 @@ import org.eblocker.server.common.data.openvpn.VpnProfile;
 import org.eblocker.server.common.data.systemstatus.SubSystem;
 import org.eblocker.server.common.network.NetworkStateMachine;
 import org.eblocker.server.common.network.TorController;
-import org.eblocker.server.common.openvpn.OpenVpnService;
+import org.eblocker.server.common.vpn.VpnService;
 import org.eblocker.server.common.startup.SubSystemInit;
 import org.eblocker.server.common.startup.SubSystemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// depends on OpenVpnService and DeviceService for initialization
+// depends on VpnService and DeviceService for initialization
 @Singleton
 @SubSystemService(value = SubSystem.SERVICES)
 public class AnonymousService {
@@ -37,14 +37,14 @@ public class AnonymousService {
     private final Logger log = LoggerFactory.getLogger(AnonymousService.class);
 
     private final DeviceService deviceService;
-    private final OpenVpnService openVpnService;
+    private final VpnService vpnService;
     private final TorController torController;
     private final NetworkStateMachine networkStateMachine;
 
     @Inject
-    public AnonymousService(DeviceService deviceService, OpenVpnService openVpnService, TorController torController, NetworkStateMachine networkStateMachine) {
+    public AnonymousService(DeviceService deviceService, VpnService vpnService, TorController torController, NetworkStateMachine networkStateMachine) {
         this.deviceService = deviceService;
-        this.openVpnService = openVpnService;
+        this.vpnService = vpnService;
         this.torController = torController;
         this.networkStateMachine = networkStateMachine;
     }
@@ -57,7 +57,7 @@ public class AnonymousService {
                 .filter(Device::isUseAnonymizationService)
                 .filter(device -> device.getUseVPNProfileID() != null)
                 .forEach(device -> {
-                    VpnProfile profile = openVpnService.getVpnProfileById(device.getUseVPNProfileID());
+                    VpnProfile profile = vpnService.getVpnProfileById(device.getUseVPNProfileID());
                     if (profile != null) {
                         enableVpn(device, profile);
                     } else {
@@ -69,7 +69,7 @@ public class AnonymousService {
 
     public void enableTor(Device device) {
         log.info("enabling tor for {}", device.getId());
-        openVpnService.restoreNormalRoutingForClient(device);
+        vpnService.restoreNormalRoutingForClient(device);
         torController.addDeviceUsingTor(device);
         device.setUseAnonymizationService(true);
         device.setRouteThroughTor(true);
@@ -89,7 +89,7 @@ public class AnonymousService {
     public void enableVpn(Device device, VpnProfile profile) {
         log.info("enabling vpn {} for {}", profile.getId(), device.getId());
         torController.removeDeviceNotUsingTor(device);
-        openVpnService.routeClientThroughVpnTunnel(device, profile);
+        vpnService.routeClientThroughVpnTunnel(device, profile);
         device.setUseAnonymizationService(true);
         device.setRouteThroughTor(false);
         device.setUseVPNProfileID(profile.getId());
@@ -99,7 +99,7 @@ public class AnonymousService {
 
     public void disableVpn(Device device) {
         log.info("disabling vpn {}", device.getId());
-        openVpnService.restoreNormalRoutingForClient(device);
+        vpnService.restoreNormalRoutingForClient(device);
         device.setUseAnonymizationService(false);
         deviceService.updateDevice(device);
         networkStateMachine.deviceStateChanged(device);

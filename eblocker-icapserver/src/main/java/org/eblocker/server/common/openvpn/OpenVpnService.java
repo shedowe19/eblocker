@@ -28,6 +28,7 @@ import org.eblocker.server.common.data.openvpn.VpnLoginCredentials;
 import org.eblocker.server.common.data.openvpn.VpnProfile;
 import org.eblocker.server.common.data.openvpn.VpnStatus;
 import org.eblocker.server.common.data.systemstatus.SubSystem;
+import org.eblocker.server.common.data.wireguard.WireGuardProfile;
 import org.eblocker.server.common.openvpn.configuration.OpenVpnConfiguration;
 import org.eblocker.server.common.openvpn.configuration.OpenVpnConfigurationParser;
 import org.eblocker.server.common.openvpn.configuration.OpenVpnConfigurationVersion0;
@@ -251,7 +252,7 @@ public class OpenVpnService {
     public OpenVpnProfile saveProfile(OpenVpnProfile profile) throws IOException {
         OpenVpnProfile storedProfile;
         if (profile.getId() == null) {
-            int id = dataSource.nextId(OpenVpnProfile.class);
+            int id = nextSharedProfileId();
             storedProfile = new OpenVpnProfile();
             storedProfile.setId(id);
             storedProfile.setConfigurationFileVersion(3);
@@ -307,6 +308,26 @@ public class OpenVpnService {
         maskPassword(storedProfile);
 
         return storedProfile;
+    }
+
+    private int nextSharedProfileId() {
+        int nextOpenVpnId = dataSource.nextId(OpenVpnProfile.class);
+        int maxOpenVpnId = maxProfileId(dataSource.getAll(OpenVpnProfile.class));
+        int maxWireGuardId = maxProfileId(dataSource.getAll(WireGuardProfile.class));
+        int id = Math.max(nextOpenVpnId, Math.max(maxOpenVpnId, maxWireGuardId) + 1);
+        dataSource.setIdSequence(OpenVpnProfile.class, id);
+        return id;
+    }
+
+    private int maxProfileId(Collection<? extends VpnProfile> profiles) {
+        if (profiles == null) {
+            return 0;
+        }
+        return profiles.stream()
+                .map(VpnProfile::getId)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(0);
     }
 
     public void deleteVpnProfile(int id) {
