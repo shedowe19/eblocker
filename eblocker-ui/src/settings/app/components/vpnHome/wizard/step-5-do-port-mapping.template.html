@@ -9,27 +9,54 @@
 
             <div>
                 <p translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.TEXT1"></p>
-                <p translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.TEXT2"></p>
+                <p translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.TEXT_PARALLEL_PORTS"></p>
             </div>
 
-            <div layout="row" layout-padding>
-                <div flex="50" flex-gt-sm="40">
-                    <eb-label-container label="{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.MOBILE_PORT' | translate }}"
-                                        config="vm.eblockerMobilePortConfig">
-                    </eb-label-container>
+            <div layout="column" layout-padding>
+                <div layout="row" layout-xs="column">
+                    <div flex="50" flex-gt-sm="40">
+                        <eb-label-container label="OpenVPN {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.MOBILE_PORT' | translate }}"
+                                            config="vm.eblockerMobilePortConfig">
+                        </eb-label-container>
+                    </div>
+
+                    <div flex="50" flex-gt-sm="50">
+                        <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
+                            <label>OpenVPN {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.MAP_PORT_LABEL' | translate }}</label>
+                            <input size="32" type="number" name="openVpnPort" ng-min="vm.minPort" ng-max="vm.maxPort" ng-model="vm.portMapping" ng-change="vm.onChangePort()" required>
+                            <div ng-messages="vm.portMappingForm.openVpnPort.$error" ng-if="vm.portMappingForm.$submitted || vm.portMappingForm.openVpnPort.$touched">
+                                <div ng-message="required">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED' | translate }}</div>
+                                <div ng-message="number">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER' | translate }}</div>
+                                <div ng-message="max">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                                <div ng-message="min">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                            </div>
+                        </md-input-container>
+                    </div>
                 </div>
 
-                <div flex="50" flex-gt-sm="50">
-                    <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
-                        <label>{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.MAP_PORT_LABEL' | translate }}</label>
-                        <input size="32" type="number" name="port" ng-min="vm.minPort" ng-max="vm.maxPort" ng-model="vm.portMapping" ng-change="vm.onChangePort()" required>
-                        <div ng-messages="vm.portMappingForm.port.$error" ng-if="vm.portMappingForm.$submitted || vm.portMappingForm.port.$touched">
-                            <div ng-message="required">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED' | translate }}</div>
-                            <div ng-message="number">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER' | translate }}</div>
-                            <div ng-message="max">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
-                            <div ng-message="min">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
-                        </div>
-                    </md-input-container>
+                <div layout="row" layout-xs="column">
+                    <div flex="50" flex-gt-sm="40">
+                        <eb-label-container label="WireGuard {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.MOBILE_PORT' | translate }}"
+                                            config="vm.wireGuardMobilePortConfig">
+                        </eb-label-container>
+                    </div>
+
+                    <div flex="50" flex-gt-sm="50">
+                        <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
+                            <label>WireGuard {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.MAP_PORT_LABEL' | translate }}</label>
+                            <input size="32" type="number" name="wireGuardPort" ng-min="vm.minPort" ng-max="vm.maxPort" ng-model="vm.wireGuardPortMapping" ng-change="vm.onChangeWireGuardPort()" required>
+                            <div ng-messages="vm.portMappingForm.wireGuardPort.$error" ng-if="vm.portMappingForm.$submitted || vm.portMappingForm.wireGuardPort.$touched">
+                                <div ng-message="required">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED' | translate }}</div>
+                                <div ng-message="number">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER' | translate }}</div>
+                                <div ng-message="max">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                                <div ng-message="min">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                            </div>
+                        </md-input-container>
+                    </div>
+                </div>
+
+                <div ng-if="vm.hasPortCollision()">
+                    <span class="content-error" translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_COLLISION"></span>
                 </div>
             </div>
 
@@ -47,21 +74,16 @@
                 <div hide-gt-sm layout-padding></div>
 
                 <div layout="row" flex-gt-sm="45" layout-align="start center">
-
-                    <!-- Mapping port IN PROGRESS -->
                     <div ng-show="vm.isMappingPorts" layout="row" layout-align="start center">
                         <md-progress-circular md-mode="indeterminate" md-diameter="32"></md-progress-circular>
                         <span style="margin-left: 20px;">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.LABEL_WAITING' | translate}}</span>
                     </div>
 
-                    <!-- Mapping port DONE -->
                     <div layout="row" layout-align="center center" ng-show="!vm.isMappingPorts && (vm.portsAreMapped || vm.portsMappingError)">
-                        <!-- Mapping port SUCCESS -->
                         <div layout="row" layout-align="center center" ng-show="vm.portsAreMapped">
                             <span class="content-ok" style="margin-right: 10px;">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.LABEL_MAPPING_SUCCESS' | translate}}</span>
                             <md-icon class="content-ok" md-svg-src="/img/icons/ic_check_black.svg"></md-icon>
                         </div>
-                        <!-- Mapping port ERROR -->
                         <div layout="row" layout-align="center center" ng-show="vm.portsMappingError">
                             <span class="content-error" style="margin-right: 10px;">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.AUTO.LABEL_MAPPING_ERROR' | translate}}</span>
                             <md-icon class="content-error" md-svg-src="/img/icons/ic_close_black_24px.svg"></md-icon>
@@ -71,7 +93,6 @@
 
                 <div hide-gt-sm layout-padding></div>
 
-                <!-- Mapping port HELP -->
                 <div flex-gt-sm="15" layout="row" layout-align="center center" layout-gt-sm-align="end center">
                     <eb-help-inline template="app/components/vpnHome/wizard/help-port-forwarding-auto.template.html"
                                     as-dialog="true">
@@ -89,29 +110,56 @@
 
             <div>
                 <p translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.TEXT1"></p>
+                <p translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.TEXT_PARALLEL_PORTS"></p>
             </div>
 
-            <div layout="row" layout-padding>
-                <div flex="50" flex-gt-sm="40">
-                    <eb-label-container label="{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.MOBILE_PORT' | translate }}"
-                                        config="vm.eblockerMobilePortConfig">
-                    </eb-label-container>
+            <div layout="column" layout-padding>
+                <div layout="row" layout-xs="column">
+                    <div flex="50" flex-gt-sm="40">
+                        <eb-label-container label="OpenVPN {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.MOBILE_PORT' | translate }}"
+                                            config="vm.eblockerMobilePortConfig">
+                        </eb-label-container>
+                    </div>
+
+                    <div flex="50" flex-gt-sm="50">
+                        <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
+                            <label>OpenVPN {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.MAP_PORT_LABEL' | translate }}</label>
+                            <input size="32" type="number" name="manualOpenVpnPort" ng-min="vm.minPort" ng-max="vm.maxPort" ng-model="vm.portMapping" ng-change="vm.onChangePort()" required>
+                            <div ng-messages="vm.portMappingForm.manualOpenVpnPort.$error" ng-if="vm.portMappingForm.$submitted || vm.portMappingForm.manualOpenVpnPort.$touched">
+                                <div ng-message="required">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED' | translate }}</div>
+                                <div ng-message="number">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER' | translate }}</div>
+                                <div ng-message="max">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                                <div ng-message="min">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                            </div>
+                        </md-input-container>
+                    </div>
                 </div>
 
-                <div flex="50" flex-gt-sm="50">
-                    <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
-                        <label>{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.MAP_PORT_LABEL' | translate }}</label>
-                        <input size="32" type="number" name="port" ng-min="vm.minPort" ng-max="vm.maxPort" ng-model="vm.portMapping" ng-change="vm.onChangePort()" required>
-                        <div ng-messages="vm.portMappingForm.port.$error" ng-if="vm.portMappingForm.$submitted || vm.portMappingForm.port.$touched">
-                            <div ng-message="required">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED' | translate }}</div>
-                            <div ng-message="number">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER' | translate }}</div>
-                            <div ng-message="max">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
-                            <div ng-message="min">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
-                        </div>
-                    </md-input-container>
+                <div layout="row" layout-xs="column">
+                    <div flex="50" flex-gt-sm="40">
+                        <eb-label-container label="WireGuard {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.MOBILE_PORT' | translate }}"
+                                            config="vm.wireGuardMobilePortConfig">
+                        </eb-label-container>
+                    </div>
+
+                    <div flex="50" flex-gt-sm="50">
+                        <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
+                            <label>WireGuard {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.MANUAL.MAP_PORT_LABEL' | translate }}</label>
+                            <input size="32" type="number" name="manualWireGuardPort" ng-min="vm.minPort" ng-max="vm.maxPort" ng-model="vm.wireGuardPortMapping" ng-change="vm.onChangeWireGuardPort()" required>
+                            <div ng-messages="vm.portMappingForm.manualWireGuardPort.$error" ng-if="vm.portMappingForm.$submitted || vm.portMappingForm.manualWireGuardPort.$touched">
+                                <div ng-message="required">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED' | translate }}</div>
+                                <div ng-message="number">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER' | translate }}</div>
+                                <div ng-message="max">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                                <div ng-message="min">{{ 'ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_IN_BETWEEN' | translate:{min: vm.minPort, max: vm.maxPort} }}</div>
+                            </div>
+                        </md-input-container>
+                    </div>
+                </div>
+
+                <div ng-if="vm.hasPortCollision()">
+                    <span class="content-error" translate="ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_COLLISION"></span>
                 </div>
             </div>
-
 
             <div class="config-frame md-whiteframe-z1" layout="row" layout-xs="column" layout-sm="column" layout-align="center center">
                 <div flex-gt-sm="85">
@@ -122,7 +170,6 @@
 
                 <div hide-gt-sm layout-padding></div>
 
-                <!-- Mapping port HELP -->
                 <div flex-gt-sm="15" layout="row" layout-align="center center" layout-gt-sm-align="end center">
                     <eb-help-inline template="app/components/vpnHome/wizard/help-port-forwarding-manual.template.html"
                                     as-dialog="true">
@@ -147,7 +194,7 @@
             </md-button>
             <md-button type="button"
                        ng-if="vm.portMappingType === vm.PORT_MAPPING_OPTIONS.manual"
-                       ng-disabled="!vm.manuallyMappedPortsConfirm || vm.isSavingConfig"
+                       ng-disabled="!vm.manuallyMappedPortsConfirm || !vm.isPortValid() || vm.isSavingConfig"
                        ng-click="vm.saveVpnStatusAndContinue()"
                        class="md-raised md-primary md-accent">
                 {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.ACTION.SAVE_AND_CONTINUE' | translate }}
@@ -168,7 +215,7 @@
                 </md-button>
                 <md-button type="button"
                            ng-if="vm.portMappingType === vm.PORT_MAPPING_OPTIONS.manual"
-                           ng-disabled="!vm.manuallyMappedPortsConfirm || vm.isSavingConfig"
+                           ng-disabled="!vm.manuallyMappedPortsConfirm || !vm.isPortValid() || vm.isSavingConfig"
                            ng-click="vm.saveVpnStatusAndContinue()"
                            class="md-raised md-primary md-accent">
                     {{ 'ADMINCONSOLE.VPN_HOME_WIZARD.ACTION.SAVE_AND_CONTINUE' | translate }}

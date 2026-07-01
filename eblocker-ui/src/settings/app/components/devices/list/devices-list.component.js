@@ -79,8 +79,8 @@ function Controller(logger, $filter, $stateParams, $translate, moment, // jshint
     };
 
     function loadMobileStatus() {
-        VpnHomeService.loadStatus().then(function(response) {
-            vm.isMobileEnabled = response.data.isRunning;
+        VpnHomeService.loadStatuses().then(function(statuses) {
+            vm.isMobileEnabled = statuses.openVpn.isRunning || statuses.wireGuard.isRunning;
         });
     }
 

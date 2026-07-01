@@ -19,7 +19,7 @@ export default function CardAvailabilityService($q, FILTER_TYPE, CARD_HTML, Devi
                                                 DeviceSelectorService) {
     'ngInject';
 
-    let device, globalSslState, profile, pause, vpnHomeStatus;
+    let device, globalSslState, profile, pause, vpnHomeStatus, wireGuardMobileStatus;
 
     function getDevice() {
         return DeviceService.getDevice().then(function success(response) {
@@ -47,8 +47,9 @@ export default function CardAvailabilityService($q, FILTER_TYPE, CARD_HTML, Devi
     }
 
     function getVpnHomeStatus() {
-        return VpnHomeService.loadStatus().then(function success(response) {
-            vpnHomeStatus = response.data;
+        return VpnHomeService.loadStatuses().then(function success(statuses) {
+            vpnHomeStatus = statuses.openVpn;
+            wireGuardMobileStatus = statuses.wireGuard;
         });
     }
 
@@ -95,7 +96,8 @@ export default function CardAvailabilityService($q, FILTER_TYPE, CARD_HTML, Devi
         } else if (isCard(card.name, 'dashboard-pause')) {
             return isPauseCardAvailable(device) || isInternetAccessLocked(device);
         } else if (isCard(card.name, 'dashboard-mobile')) {
-            return isMobileCardAvailable(card, vpnHomeStatus, device) || isInternetAccessLocked(device);
+            return isMobileCardAvailable(card, vpnHomeStatus, wireGuardMobileStatus, device) ||
+                isInternetAccessLocked(device);
         } else if (isCard(card.name, 'dashboard-user')) {
             return isUserCardAvailable(device);
         } else if (isCard(card.name, 'dashboard-icon')) {
@@ -144,8 +146,10 @@ export default function CardAvailabilityService($q, FILTER_TYPE, CARD_HTML, Devi
         }
     }
 
-    function isMobileCardAvailable(card, vpnHomeStatus, device) {
-        return vpnHomeStatus.isRunning && device.mobileState && DeviceSelectorService.isLocalDevice();
+    function isMobileCardAvailable(card, vpnHomeStatus, wireGuardMobileStatus, device) {
+        const openVpnRunning = angular.isObject(vpnHomeStatus) && vpnHomeStatus.isRunning;
+        const wireGuardRunning = angular.isObject(wireGuardMobileStatus) && wireGuardMobileStatus.isRunning;
+        return (openVpnRunning || wireGuardRunning) && device.mobileState && DeviceSelectorService.isLocalDevice();
     }
 
     function isUserCardAvailable(device) {

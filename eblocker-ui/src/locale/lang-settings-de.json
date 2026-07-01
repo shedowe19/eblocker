@@ -527,15 +527,25 @@
                     "ACTION": {
                         "CREATE_CERT": "Konfiguration erstellen",
                         "DOWNLOAD_CERT": "Konfiguration herunterladen",
+                        "DOWNLOAD_OPENVPN_CONF": "OpenVPN-Konfiguration herunterladen",
+                        "DOWNLOAD_WIREGUARD_CONF": "WireGuard-Konfiguration herunterladen",
                         "DOWNLOAD_CERT_XS": "Konfig herunterladen",
                         "REVOKE_CERT": "Konfiguration zurückziehen"
+                    },
+                    "ARIA": {
+                        "DOWNLOAD_OPENVPN_CONF": "OpenVPN-Konfiguration herunterladen",
+                        "DOWNLOAD_WIREGUARD_CONF": "WireGuard-Konfiguration herunterladen"
                     },
                     "HINT_LINK": "eBlocker Dashboard",
                     "HINT_POST": "auf deinem mobilen Gerät, um die Konfiguration direkt in deiner VPN App zu installieren!",
                     "HINT_PRE": "Hinweis: Nutze das",
                     "LABEL_ENABLED": "eBlocker Mobile Remote Zugriff aktiviert",
                     "LABEL_PRIVATE_NETWORK_ACCESS": "Mobiles Gerät darf auf Ressourcen im lokalen Netz zugreifen",
-                    "TAB_LABEL": "Mobile"
+                    "TAB_LABEL": "Mobile",
+                    "TOOLTIP": {
+                        "OPENVPN_NOT_RUNNING": "OpenVPN Mobile ist nicht aktiv.",
+                        "WIREGUARD_NOT_RUNNING": "WireGuard Mobile ist nicht aktiv."
+                    }
                 },
                 "USERS": {
                     "ACTION": {
@@ -3402,12 +3412,15 @@
             },
             "LABEL": "Status",
             "LABEL_CONNECTION_TEST": "Verbindungstest",
+            "LABEL_CONNECTION_TEST_WIREGUARD_INFO": "Der bestehende Verbindungstest prüft OpenVPN Mobile. WireGuard Mobile läuft parallel über 51820/udp.",
             "LABEL_EXTERNAL_HOST_IP": "Externe IP-Adresse oder DNS name",
             "LABEL_EXTERNAL_TYPE": "Externer Adress Typ",
             "LABEL_MOBILE_PORT": "eBlocker Mobile Port",
+            "LABEL_OPENVPN_MOBILE": "OpenVPN Mobile",
             "LABEL_PORT_FORWARDING": "Portweiterleitung",
             "LABEL_ROUTER_PORT": "Diesem Port im Router zugewiesen",
             "LABEL_SETTINGS": "Einstellungen",
+            "LABEL_WIREGUARD_MOBILE": "WireGuard Mobile",
             "LABEL_WIZARD_REPEAT": "Konfiguration",
             "SWITCH_VPN": {
                 "OFF": "eBlocker Mobile aus",
@@ -3490,6 +3503,7 @@
                     "MAP_PORT_LABEL": "Diesem externen Port zugewiesen",
                     "MOBILE_PORT": "eBlocker Mobile Port",
                     "TEXT1": "Der eBlocker wird jetzt versuchen, die Ports mit Hilfe von UPnP zuzuweisen.",
+                    "TEXT_PARALLEL_PORTS": "Es werden zwei UDP-Weiterleitungen eingerichtet: OpenVPN Mobile auf 1194/udp und WireGuard Mobile auf 51820/udp.",
                     "TEXT2": "Ob dies möglich ist, hängt von deinem Router und dessen Konfiguration ab. Die meisten modernen Router unterstützen UPnP. Es könnte aus Sicherheitsgründen deaktiviert sein."
                 },
                 "ERROR": {
@@ -3497,13 +3511,15 @@
                     "PORT_NUMBER": "Der Port muss eine Zahl sein.",
                     "PORT_REQUIRED": "Der Port wird benötigt",
                     "PORT_TOO_LARGE": "Der Port ist zu groß",
-                    "PORT_TOO_SMALL": "Der Port ist zu klein"
+                    "PORT_TOO_SMALL": "Der Port ist zu klein",
+                    "PORT_COLLISION": "OpenVPN und WireGuard dürfen nicht denselben externen Router-Port verwenden."
                 },
                 "MANUAL": {
                     "HEADER": "Manuelle Port Zuweisung",
                     "MAP_PORT_LABEL": "Diesem externen Port zugewiesen",
                     "MOBILE_PORT": "eBlocker Mobile Port",
                     "TEXT1": "Bitte weise jetzt die Ports in deinem Router zu. Wähle dabei das Protokoll UDP aus.",
+                    "TEXT_PARALLEL_PORTS": "Bitte richte zwei UDP-Portweiterleitungen im Router ein: OpenVPN Mobile und WireGuard Mobile.",
                     "TEXT_CONFIRM": "Ich habe die Ports in meinem Router zugewiesen."
                 },
                 "NOTIFICATION": {

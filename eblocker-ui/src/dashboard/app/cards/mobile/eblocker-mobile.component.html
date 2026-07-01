@@ -40,22 +40,28 @@
                         </md-select>
                     </md-input-container>
                 </div>
+            </div>
+            <div layout="row" layout-xs="column" layout-align="center center">
                 <div>
                     <md-button class="md-raised md-primary md-accent"
-                               ng-disabled="vm.vpnHomeStatus.isFirstStart || vm.isCreatingCertificate || vm.isDownloadingConf"
-                               ng-click="vm.downloadClientConf(vm.device)"
-                               aria-label="{{ 'MOBILE.CARD.ACTION.DOWNLOAD' | translate }}">
-                        {{'MOBILE.CARD.ACTION.DOWNLOAD' | translate}}
+                               ng-disabled="vm.isOpenVpnDownloadDisabled()"
+                               ng-click="vm.downloadOpenVpnClientConf(vm.device)"
+                               aria-label="OpenVPN {{ 'MOBILE.CARD.ACTION.DOWNLOAD' | translate }}">
+                        OpenVPN {{'MOBILE.CARD.ACTION.DOWNLOAD' | translate}}
                     </md-button>
                 </div>
-                <!--<div>-->
-                    <!--<md-button class="md-raised eb-delete-button"-->
-                               <!--ng-disabled="!vm.device.hasCertificate || vm.vpnHomeStatus.isFirstStart || vm.isRevokingCertificate"-->
-                               <!--ng-click="vm.clickRevokeCert($event, vm.device)"-->
-                               <!--aria-label="{{ 'MOBILE.CARD.ACTION.REVOKE' | translate }}">-->
-                        <!--{{'MOBILE.CARD.ACTION.REVOKE' | translate}}-->
-                    <!--</md-button>-->
-                <!--</div>-->
+                <div hide-xs style="width: 12px;"></div>
+                <div>
+                    <md-button class="md-raised md-primary md-accent"
+                               ng-disabled="vm.isWireGuardDownloadDisabled()"
+                               ng-click="vm.downloadWireGuardClientConf(vm.device)"
+                               aria-label="WireGuard {{ 'MOBILE.CARD.ACTION.DOWNLOAD' | translate }}">
+                        WireGuard {{'MOBILE.CARD.ACTION.DOWNLOAD' | translate}}
+                    </md-button>
+                </div>
+                <div ng-if="vm.isDownloadingOpenVpnConf || vm.isDownloadingWireGuardConf" style="margin-left: 12px;">
+                    <md-progress-circular md-mode="indeterminate" md-diameter="32"></md-progress-circular>
+                </div>
             </div>
 
             <p translate="MOBILE.CARD.LABEL_STEP_3" style="margin-bottom: 0;"></p>

@@ -19,13 +19,16 @@ export default {
     controller: Controller,
     controllerAs: 'vm',
     bindings: {
-        vpnHomeStatus: '<'
+        vpnHomeStatus: '<',
+        wireGuardStatus: '<'
     }
 };
 
-function Controller(logger, StateService, STATES, VpnHomeService, NotificationService, UpnpService, DialogService) { // jshint ignore: line
+function Controller(logger, StateService, STATES, VpnHomeService, NotificationService, DialogService, $q) { // jshint ignore: line
     'ngInject';
 
+    const OPENVPN_PORT = 1194;
+    const WIREGUARD_PORT = 51820;
     const vm = this;
     vm.openSaveWizardDialog = openSaveWizardDialog;
     vm.openCloseWizardDialog = openCloseWizardDialog;
@@ -50,21 +53,31 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
     };
 
     vm.$onInit = function() {
-        // initialize VPN status if not already defined in server
-        vm.vpnHomeStatus.portForwardingMode = vm.vpnHomeStatus.portForwardingMode || vm.PORT_MAPPING_OPTIONS.auto;
-        vm.vpnHomeStatus.externalAddressType = vm.vpnHomeStatus.externalAddressType || vm.ACCESS_OPTIONS.dynDns;
-        vm.vpnHomeStatus.portForwardingMode = vm.vpnHomeStatus.portForwardingMode || vm.PORT_MAPPING_OPTIONS.auto;
-        const port = vm.vpnHomeStatus.mappedPort;
-        vm.vpnHomeStatus.mappedPort = angular.isNumber(port) ? port : 1194;
+        vm.vpnHomeStatus = normalizeStatus(vm.vpnHomeStatus, OPENVPN_PORT);
+        vm.wireGuardStatus = normalizeStatus(vm.wireGuardStatus, WIREGUARD_PORT);
 
-        vm.vpnHomeStatus.isRunning = false; // stop server, so that connection test will work.
+        vm.vpnHomeStatus.isRunning = false;
+        vm.wireGuardStatus.isRunning = false;
+
         vm.portMapping = vm.vpnHomeStatus.mappedPort;
+        vm.wireGuardPortMapping = vm.wireGuardStatus.mappedPort;
         vm.accessType = vm.vpnHomeStatus.externalAddressType;
         vm.portMappingType = vm.vpnHomeStatus.portForwardingMode;
 
-        // save init to server (if required) and shutdown eBlocker mobile server
+        syncWireGuardStatusFromOpenVpn();
         setVpnStatus(vm.vpnHomeStatus);
     };
+
+    function normalizeStatus(status, defaultPort) {
+        status = angular.isObject(status) ? status : {};
+        status.portForwardingMode = status.portForwardingMode || vm.PORT_MAPPING_OPTIONS.auto;
+        status.externalAddressType = status.externalAddressType || vm.ACCESS_OPTIONS.dynDns;
+        status.mappedPort = angular.isNumber(status.mappedPort) ? status.mappedPort : defaultPort;
+        status.host = angular.isString(status.host) ? status.host : '';
+        status.isRunning = status.isRunning === true;
+        status.isFirstStart = status.isFirstStart === true;
+        return status;
+    }
 
     function goBack() {
         return StateService.goToState(STATES.VPN_HOME);
@@ -89,22 +102,30 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
 
     function validateStatus(status) {
        const errors = [];
+        syncWireGuardStatusFromOpenVpn();
 
         // HOST ERROR
         if (!angular.isString(status.host) || status.host === '') {
             errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_SET_IP.ERROR.HOST_REQUIRED');
         }
 
-        // PORT ERROR
-        if (!angular.isNumber(status.mappedPort)) {
-            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED');
-            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER');
-        } else if (status.mappedPort > vm.maxPort) {
-            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_TOO_LARGE');
-        } else if (status.mappedPort < vm.minPort) {
-            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_TOO_SMALL');
+        validatePort(status.mappedPort, errors);
+        validatePort(vm.wireGuardStatus.mappedPort, errors);
+        if (status.mappedPort === vm.wireGuardStatus.mappedPort) {
+            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_COLLISION');
         }
         return errors;
+    }
+
+    function validatePort(port, errors) {
+        if (!angular.isNumber(port)) {
+            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_REQUIRED');
+            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_NUMBER');
+        } else if (port > vm.maxPort) {
+            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_TOO_LARGE');
+        } else if (port < vm.minPort) {
+            errors.push('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.ERROR.PORT_TOO_SMALL');
+        }
     }
 
     function openSaveWizardDialog(event) {
@@ -115,8 +136,22 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
         DialogService.mobileWizardCloseConfirm(event, goBack, angular.noop);
     }
 
+    function syncWireGuardStatusFromOpenVpn() {
+        vm.wireGuardStatus.externalAddressType = vm.vpnHomeStatus.externalAddressType;
+        vm.wireGuardStatus.host = vm.vpnHomeStatus.host;
+        vm.wireGuardStatus.portForwardingMode = vm.vpnHomeStatus.portForwardingMode;
+        vm.wireGuardStatus.mappedPort = vm.wireGuardPortMapping;
+    }
+
     function setVpnStatus(status) {
-        return VpnHomeService.setStatus(status);
+        status.mappedPort = vm.portMapping;
+        status.portForwardingMode = vm.portMappingType;
+        status.externalAddressType = vm.accessType;
+        syncWireGuardStatusFromOpenVpn();
+        return $q.all([
+            VpnHomeService.setOpenVpnStatus(status),
+            VpnHomeService.setWireGuardStatus(vm.wireGuardStatus)
+        ]);
     }
 
     // ************** STEP ACCESS: step 2 **************
@@ -126,7 +161,9 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
 
     function accessTypeChange() {
         vm.vpnHomeStatus.externalAddressType = vm.accessType;
+        vm.wireGuardStatus.externalAddressType = vm.accessType;
         vm.vpnHomeStatus.host = '';
+        vm.wireGuardStatus.host = '';
     }
 
     function accessToggleShowMore() {
@@ -143,6 +180,7 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
         if (!vm.isHostNameOrIpValid()) {
             return;
         }
+        vm.wireGuardStatus.host = vm.vpnHomeStatus.host;
         nextStep();
     };
 
@@ -164,6 +202,7 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
 
     function portMappingTypeChange() {
         vm.vpnHomeStatus.portForwardingMode = vm.portMappingType;
+        vm.wireGuardStatus.portForwardingMode = vm.portMappingType;
     }
     // ############## END STEP CHOOSE PORT MAPPING ##############
 
@@ -172,20 +211,35 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
     // ************** STEP DO PORT MAPPING: step 5 **************
     vm.saveVpnStatusAndContinue = saveVpnStatusAndContinue;
     vm.onChangePort = onChangePort;
+    vm.onChangeWireGuardPort = onChangeWireGuardPort;
+    vm.hasPortCollision = hasPortCollision;
     vm.manuallyMappedPortsConfirm = false;
     vm.portsAreMapped = false;
     vm.portsMappingError = false;
     vm.eblockerMobilePortConfig = {
-        value: '1194'
+        value: String(OPENVPN_PORT)
+    };
+    vm.wireGuardMobilePortConfig = {
+        value: String(WIREGUARD_PORT)
     };
 
     vm.mapPortsNow = mapPortsNow;
     function mapPortsNow() {
+        if (hasPortCollision()) {
+            vm.portsMappingError = true;
+            NotificationService.
+            error('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.NOTIFICATION.PORT_MAPPING_ERROR');
+            return;
+        }
+
         vm.isMappingPorts = true;
         vm.portsAreMapped = false;
         vm.portsMappingError = false;
 
-        UpnpService.mapVpnPorts(vm.portMapping).then(function success(response) {
+        $q.all([
+            VpnHomeService.setOpenVpnPortForwarding(vm.portMapping),
+            VpnHomeService.setWireGuardPortForwarding(vm.wireGuardPortMapping)
+        ]).then(function success(response) {
             NotificationService.
             info('ADMINCONSOLE.VPN_HOME_WIZARD.STEP_DO_PORT_MAPPING.NOTIFICATION.PORT_MAPPING_SUCCESS');
             vm.portsAreMapped = true;
@@ -218,8 +272,22 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
         vm.vpnHomeStatus.mappedPort = vm.portMapping;
     }
 
+    function onChangeWireGuardPort() {
+        vm.manuallyMappedPortsConfirm = false;
+        vm.portsAreMapped = false;
+        vm.portsMappingError = false;
+        vm.connectionOk = false;
+        vm.connectionError = false;
+        vm.wireGuardStatus.mappedPort = vm.wireGuardPortMapping;
+    }
+
+    function hasPortCollision() {
+        return angular.isNumber(vm.portMapping) && angular.isNumber(vm.wireGuardPortMapping) &&
+            vm.portMapping === vm.wireGuardPortMapping;
+    }
+
     vm.isPortValid = function() {
-        return vm.portMappingForm.$valid;
+        return vm.portMappingForm.$valid && !hasPortCollision();
     };
     // ############## END STEP DO PORT MAPPING ##############
 
@@ -319,8 +387,9 @@ function Controller(logger, StateService, STATES, VpnHomeService, NotificationSe
     function launchVpnServer() {
         vm.nextStep();
         vm.isLaunching = true;
-        // Start server.
+        // Start both mobile VPN servers.
         vm.vpnHomeStatus.isRunning = true;
+        vm.wireGuardStatus.isRunning = true;
 
         setVpnStatus(vm.vpnHomeStatus).then(function success() {
             vm.isLaunchSuccess = true;

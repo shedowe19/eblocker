@@ -14,71 +14,148 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+/* jshint -W071 */
 export default function VpnHomeService(logger, $http, $q, NotificationService, $interval, DataCachingService) {
     'ngInject';
 
-    const PATH = '/api/dashboard/openvpn';
-    const PATH_CONNECTION_TEST = PATH + '/test';
+    const OPENVPN = 'OPENVPN';
+    const WIREGUARD = 'WIREGUARD';
+    const PATHS = {};
+    PATHS[OPENVPN] = '/api/dashboard/openvpn';
+    PATHS[WIREGUARD] = '/api/dashboard/wireguard';
+    const PATH_CONNECTION_TEST = PATHS[OPENVPN] + '/test';
 
-    function getOpenVpnFileName(deviceId, osType) {
-        return $http.get(PATH + '/filename/' + deviceId + '/' + osType).then(standardSuccess, standardError);
+    let openVpnStatusCache, wireGuardStatusCache;
+
+    function normalizeProtocol(protocol) {
+        return protocol === WIREGUARD ? WIREGUARD : OPENVPN;
     }
 
-    function startStopServer(status) {
-        return $http.post(PATH + '/status', status).
+    function getPath(protocol) {
+        return PATHS[normalizeProtocol(protocol)];
+    }
+
+    function getConfigurationsPath(protocol) {
+        return normalizeProtocol(protocol) === WIREGUARD ? '/configurations' : '/certificates';
+    }
+
+    function getProtocolName(protocol) {
+        return normalizeProtocol(protocol) === WIREGUARD ? 'WireGuard' : 'OpenVPN';
+    }
+
+    function getFileName(deviceId, osType, protocol) {
+        return $http.get(getPath(protocol) + '/filename/' + deviceId + '/' + osType).
+        then(standardSuccess, standardError);
+    }
+
+    function getOpenVpnFileName(deviceId, osType) {
+        return getFileName(deviceId, osType, OPENVPN);
+    }
+
+    function getWireGuardFileName(deviceId, osType) {
+        return getFileName(deviceId, osType, WIREGUARD);
+    }
+
+    function startStopServer(status, protocol) {
+        return $http.post(getPath(protocol) + '/status', status).
         then(standardSuccess, function(response) {
             // NotificationService.error('ADMINCONSOLE.SERVICE.VPN_HOME.NOTIFICATION.SERVER_START', response);
             return $q.reject(response);
         });
     }
 
-    function setStatus(status) {
-        return $http.post(PATH + '/status', status).
+    function setStatus(status, protocol) {
+        return $http.post(getPath(protocol) + '/status', status).
         then(standardSuccess, function(response) {
             // NotificationService.error('ADMINCONSOLE.SERVICE.VPN_HOME.NOTIFICATION.SERVER_POST', response);
             return $q.reject(response);
         });
     }
 
-    function resetServer() {
-        return $http.delete(PATH + '/status').
+    function resetServer(protocol) {
+        return $http.delete(getPath(protocol) + '/status').
         then(standardSuccess, function(response) {
             // NotificationService.error('ADMINCONSOLE.SERVICE.VPN_HOME.NOTIFICATION.SERVER_RESET', response);
             return $q.reject(response);
         });
     }
 
-    let statusCache;
-
-    function loadStatus() {
-        statusCache = DataCachingService.loadCache(statusCache, PATH + '/status');
-        return statusCache;
+    function loadStatus(protocol) {
+        const normalizedProtocol = normalizeProtocol(protocol);
+        if (normalizedProtocol === WIREGUARD) {
+            wireGuardStatusCache = DataCachingService.loadCache(wireGuardStatusCache, getPath(WIREGUARD) + '/status');
+            return wireGuardStatusCache;
+        }
+        openVpnStatusCache = DataCachingService.loadCache(openVpnStatusCache, getPath(OPENVPN) + '/status');
+        return openVpnStatusCache;
     }
 
-    function loadCertificates() {
-        return $http.get(PATH + '/certificates').
+    function loadOpenVpnStatus() {
+        return loadStatus(OPENVPN);
+    }
+
+    function loadWireGuardStatus() {
+        return loadStatus(WIREGUARD);
+    }
+
+    function loadStatuses() {
+        return $q.all({
+            openVpn: loadOpenVpnStatus().then(function(response) {
+                return response.data;
+            }),
+            wireGuard: loadWireGuardStatus().then(function(response) {
+                return response.data;
+            })
+        });
+    }
+
+    function loadCertificates(protocol) {
+        return $http.get(getPath(protocol) + getConfigurationsPath(protocol)).
         then(standardSuccess, function(response) {
             // NotificationService.error('ADMINCONSOLE.SERVICE.VPN_HOME.NOTIFICATION.CERTIFICATES_GET', response);
             return $q.reject(response);
         });
     }
 
+    function loadOpenVpnCertificates() {
+        return loadCertificates(OPENVPN);
+    }
+
+    function loadWireGuardConfigurations() {
+        return loadCertificates(WIREGUARD);
+    }
+
     function revokeCertificate(deviceId) {
-        return $http.delete(PATH + '/certificates/' + deviceId).
+        return $http.delete(getPath(OPENVPN) + '/certificates/' + deviceId).
         then(standardSuccess, function(response) {
             // NotificationService.error('ADMINCONSOLE.SERVICE.VPN_HOME.NOTIFICATION.CERTIFICATES_DELETE', response);
             return $q.reject(response);
         });
     }
 
-    function generateDownloadUrl(deviceId, operatingSystemType) {
-        return $http.get(PATH + '/certificates/generateDownloadUrl/' + deviceId + '/' + operatingSystemType).
+    function revokeWireGuardConfiguration(deviceId) {
+        return $http.delete(getPath(WIREGUARD) + '/configurations/' + deviceId).
+        then(standardSuccess, function(response) {
+            return $q.reject(response);
+        });
+    }
+
+    function generateDownloadUrl(deviceId, operatingSystemType, protocol) {
+        const path = getPath(protocol) + getConfigurationsPath(protocol) + '/generateDownloadUrl/';
+        return $http.get(path + deviceId + '/' + operatingSystemType).
         then(standardSuccess, function(response) {
             // NotificationService.error('ADMINCONSOLE.SERVICE.VPN_HOME.NOTIFICATION.CONFIG_DOWNLOAD', response);
             return $q.reject(response);
         });
     }
 
+    function generateOpenVpnDownloadUrl(deviceId, operatingSystemType) {
+        return generateDownloadUrl(deviceId, operatingSystemType, OPENVPN);
+    }
+
+    function generateWireGuardDownloadUrl(deviceId, operatingSystemType) {
+        return generateDownloadUrl(deviceId, operatingSystemType, WIREGUARD);
+    }
 
     /**
      * connectionTestPromise is resolved after the connection test returns distinct result.
@@ -133,28 +210,6 @@ export default function VpnHomeService(logger, $http, $q, NotificationService, $
         });
     }
 
-    // function processConnectionStatus(status) { // jshint ignore: line
-    //     if (status.state === 'SUCCESS') {
-    //         // done, success!
-    //         console.log('Connection test result success!');
-    //     } else if (status.state === 'TIMEOUT_REQUESTS' || status.state === 'TIMEOUT_RESULTS') {
-    //         // timeout, nothing else going to happen
-    //         console.log('Connection test result timeout: ' + status.state);
-    //     } else if (status.state === 'PENDING_REQUESTS' || status.state === 'PENDING_RESULTS') {
-    //         // pending, still waiting
-    //         console.log('Connection test result pending: ' + status.state);
-    //     } else if (status.state === 'ERROR' || status.state === 'FAILURE') {
-    //         // error, nothing else going to happen
-    //         console.log('Connection test result error: ' + status.state);
-    //         return 'ERROR';
-    //     } else if (status.state === 'NOT_STARTED' || status.state === 'CANCELED') {
-    //         // inconsistent, this should not happen. User cannot cancel and we have started the test.
-    //         console.log('Connection test result BROKE: ' + status.state);
-    //     }
-    //     return status.state;
-    // }
-
-
     function startConnectionTest() {
         return $http.post(PATH_CONNECTION_TEST);
     }
@@ -181,16 +236,29 @@ export default function VpnHomeService(logger, $http, $q, NotificationService, $
     }
 
     return {
+        OPENVPN: OPENVPN,
+        WIREGUARD: WIREGUARD,
+        getProtocolName: getProtocolName,
         startStopServer: startStopServer,
         setStatus: setStatus,
         resetServer: resetServer,
         loadStatus: loadStatus,
+        loadOpenVpnStatus: loadOpenVpnStatus,
+        loadWireGuardStatus: loadWireGuardStatus,
+        loadStatuses: loadStatuses,
         loadCertificates: loadCertificates,
+        loadOpenVpnCertificates: loadOpenVpnCertificates,
+        loadWireGuardConfigurations: loadWireGuardConfigurations,
         revokeCertificate: revokeCertificate,
+        revokeWireGuardConfiguration: revokeWireGuardConfiguration,
         generateDownloadUrl: generateDownloadUrl,
+        generateOpenVpnDownloadUrl: generateOpenVpnDownloadUrl,
+        generateWireGuardDownloadUrl: generateWireGuardDownloadUrl,
         doConnectionTest: doConnectionTest,
         getConnectionTestResult: getConnectionTestResult,
-        getOpenVpnFileName: getOpenVpnFileName
+        getOpenVpnFileName: getOpenVpnFileName,
+        getWireGuardFileName: getWireGuardFileName,
+        getFileName: getFileName
     };
 
     function standardSuccess(response) {

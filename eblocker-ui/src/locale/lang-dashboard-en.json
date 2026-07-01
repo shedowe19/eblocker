@@ -986,10 +986,12 @@
             },
             "CHOOSE_OS" : {
                 "ACTION_DOWNLOAD" : "Download App",
+                "ARIA_PROTOCOL" : "Choose VPN protocol",
                 "CONFIRM_DOWNLOAD" : "App has been downloaded",
                 "LABEL_CHOICE" : "Select your operating system:",
+                "LABEL_PROTOCOL" : "VPN protocol",
                 "NOTIFY_NO_DEVICE" : "Unable to detect your device.",
-                "TITLE" : "1. Download OpenVPN app",
+                "TITLE" : "1. Download VPN app",
                 "VPN_URL" : {
                     "ANDROID" : "https://play.google.com/store/apps/details?id=net.openvpn.openvpn",
                     "IOS" : "https://itunes.apple.com/de/app/openvpn-connect/id590379981?mt=8",
@@ -1015,8 +1017,8 @@
                 "TITLE" : "Connect your device with your eBlocker"
             },
             "CONNECT_WIN" : {
-                "STEP_1" : "Start the OpenVPN app if it is not already started.",
-                "STEP_2" : "Select the OpenVPN icon in the taskbar.",
+                "STEP_1" : "Start the VPN app if it is not already running.",
+                "STEP_2" : "Select the imported eBlocker Mobile configuration.",
                 "TITLE" : "Connect your device with your eBlocker"
             },
             "DIALOG" : {
@@ -1028,63 +1030,63 @@
             "DOWNLOAD_CONFIG_ANDROID" : {
                 "ACTION_DOWNLOAD" : "Download",
                 "CONFIRM_DOWNLOAD" : "Please confirm that you have installed the configuration",
-                "STEP_1" : "Download OpenVPN configuration for this device.",
-                "STEP_2" : "Confirm \"Open with OpenVPN\".",
-                "STEP_3" : "The OpenVPN app will open automatically",
+                "STEP_1" : "Download the VPN configuration for this device.",
+                "STEP_2" : "Open the file in the selected VPN app.",
+                "STEP_3" : "The VPN app will open automatically.",
                 "STEP_4" : "Confirm the file import by tapping on the green \"+\"",
                 "TITLE" : "Configuration (Android)"
             },
             "DOWNLOAD_CONFIG_IOS" : {
                 "ACTION_DOWNLOAD" : "Download",
                 "CONFIRM_DOWNLOAD" : "Please confirm that you have installed the configuration",
-                "STEP_1" : "Download OpenVPN configuration for this device.",
-                "STEP_2" : "Confirm \"Open File\" on the bottom of your screen",
-                "STEP_3" : "The OpenVPN app will open automatically",
+                "STEP_1" : "Download the VPN configuration for this device.",
+                "STEP_2" : "Open the file in the selected VPN app.",
+                "STEP_3" : "The VPN app will open automatically.",
                 "STEP_4" : "Press \"OK\" to confirm the file import",
                 "TITLE" : "Configuration (iOS)"
             },
             "DOWNLOAD_CONFIG_WIN_MAC" : {
                 "ACTION_DOWNLOAD" : "Download",
                 "CONFIRM_DOWNLOAD" : "Please confirm that you have downloaded the configuration",
-                "TEXT" : "Download OpenVPN configuration for this device.",
+                "TEXT" : "Download the VPN configuration for this device.",
                 "TITLE" : "Configuration"
             },
             "FINISH" : {
-                "TEXT_1" : "You may disconnect the VPN connection at any time using the OpenVPN app.",
+                "TEXT_1" : "You may disconnect the VPN connection at any time using the selected VPN app.",
                 "TEXT_2" : "To test the VPN connection please disconnect from your home network, enter an external network, e.g. your mobile network and open the Dashboard by clicking on {{'WIZARD.MOBILE.ACTION.DONE' | translate }}.",
                 "TITLE" : "Test"
             },
             "INSTALL_CONFIG_MAC" : {
                 "CONFIRM_INSTALL" : "Please confirm that you have installed the configuration",
-                "STEP_1" : "Double click the downloaded OpenVPN file",
+                "STEP_1" : "Double-click the downloaded VPN configuration file",
                 "STEP_2" : "Confirm the installation dialog",
                 "TITLE" : "Configuration (macOS)"
             },
             "INSTALL_CONFIG_WIN" : {
                 "CONFIRM_COPY" : "Please confirm that you have copied the configuration",
-                "TEXT" : "Copy the OpenVPN file into the folder for configuration files. This usually is C:\\Programm Files\\OpenVPN\\config\\",
+                "TEXT" : "Import the VPN configuration file in the selected VPN app. For OpenVPN on Windows, you can alternatively copy it to C:\\Programm Files\\OpenVPN\\config\\.",
                 "TEXT_COPY" : "Please copy the file \"{{name}}\".",
                 "TITLE" : "Configuration (Windows)"
             },
             "INSTALL_MAC" : {
-                "CONFIRM_INSTALL" : "Please confirm that you have installed OpenVPN",
-                "STEP_1" : "Find the downloaded OpenVPN installer in your download folder",
+                "CONFIRM_INSTALL" : "Please confirm that you have installed the VPN app",
+                "STEP_1" : "Find the downloaded VPN app in your download folder",
                 "STEP_2" : "Double click the downloaded \"Tunnelblick.dmg\"",
                 "STEP_3" : "Double click the installer contained within the .dmg file",
                 "STEP_4" : "Follow the instructions on your screen",
-                "TITLE" : "Install OpenVPN app (macOS)"
+                "TITLE" : "Install VPN app (macOS)"
             },
             "INSTALL_WINDOWS" : {
-                "CONFIRM_INSTALL" : "Please confirm that you have installed OpenVPN",
-                "STEP_1" : "Find the downloaded OpenVPN installer in your download folder",
-                "STEP_2" : "Execute the OpenVPN installer and follow the instructions on your screen",
-                "TITLE" : "Install OpenVPN app (Windows)"
+                "CONFIRM_INSTALL" : "Please confirm that you have installed the VPN app",
+                "STEP_1" : "Find the downloaded VPN app in your download folder",
+                "STEP_2" : "Start the VPN app installation and follow the instructions on your screen",
+                "TITLE" : "Install VPN app (Windows)"
             },
             "INTRO" : {
-                "EXPLAIN" : "eBlocker Mobile is based on OpenVPN. It connects this device with your eBlocker at home.",
+                "EXPLAIN" : "eBlocker Mobile connects this device with your eBlocker at home using OpenVPN or WireGuard.",
                 "EXPLAIN_STEPS" : "Only two step are required:",
-                "EXPLAIN_STEP_1" : "Installation of the OpenVPN app",
-                "EXPLAIN_STEP_2" : "Download and installation of the configuration to your OpenVPN app"
+                "EXPLAIN_STEP_1" : "Select and install the VPN app",
+                "EXPLAIN_STEP_2" : "Download and install the configuration in the VPN app"
             },
             "TITLE" : "eBlocker Mobile Wizard"
         }

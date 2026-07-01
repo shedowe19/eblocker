@@ -1057,7 +1057,14 @@ export default function RoutesConfig($urlRouterProvider, $stateProvider, STATES)
         resolvePolicy: { async: 'WAIT', when: 'LAZY' },
         resolve: {
             vpnHomeStatus: ['VpnHomeService', function (VpnHomeService) {
-                return VpnHomeService.loadStatus().then(function success(response) {
+                return VpnHomeService.loadOpenVpnStatus().then(function success(response) {
+                    return response.data;
+                }, function error() {
+                    return null;
+                });
+            }],
+            wireGuardStatus: ['VpnHomeService', function (VpnHomeService) {
+                return VpnHomeService.loadWireGuardStatus().then(function success(response) {
                     return response.data;
                 }, function error() {
                     return null;

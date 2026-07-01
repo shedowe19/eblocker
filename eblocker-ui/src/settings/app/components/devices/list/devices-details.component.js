@@ -78,6 +78,7 @@ function Controller(logger, $stateParams, $window, $interval, $timeout, $q, $tra
             // init mobile state
             vm.tmpMobileState = device.mobileState;
             vm.operatingSystemType = getDeviceTypeObject(vm.osTypes, deviceDetector.os);
+            loadWireGuardMobileStatus();
 
             setupDevice(device);
             updateAnonData();
@@ -841,20 +842,62 @@ function Controller(logger, $stateParams, $window, $interval, $timeout, $q, $tra
     }
 
     vm.downloadClientConf = downloadClientConf;
+    vm.downloadOpenVpnClientConf = downloadOpenVpnClientConf;
+    vm.downloadWireGuardClientConf = downloadWireGuardClientConf;
     vm.goToDashboard = goToDashboard;
     vm.onChangeMobile = onChangeMobile;
     vm.onChangeMobilePrivateNetworkAccess = onChangeMobilePrivateNetworkAccess;
     vm.isMobileConfigDownloadDisabled = isMobileConfigDownloadDisabled;
+    vm.isOpenVpnConfigDownloadDisabled = isOpenVpnConfigDownloadDisabled;
+    vm.isWireGuardConfigDownloadDisabled = isWireGuardConfigDownloadDisabled;
+    vm.isAnyMobileServerRunning = isAnyMobileServerRunning;
 
 
     function isMobileConfigDownloadDisabled() {
+        return isOpenVpnConfigDownloadDisabled();
+    }
+
+    function isOpenVpnConfigDownloadDisabled() {
         return !vm.tmpMobileState ||
+            !isOpenVpnMobileServerRunning() ||
             vm.vpnHomeStatus.isFirstStart ||
             vm.isEnablingDevice ||
             vm.isDisablingDevice ||
-            vm.isDownloadingConf ||
+            vm.isDownloadingOpenVpnConf ||
             !angular.isObject(vm.operatingSystemType) ||
             !angular.isString(vm.operatingSystemType.type);
+    }
+
+    function isWireGuardConfigDownloadDisabled() {
+        return !vm.tmpMobileState ||
+            !isWireGuardMobileServerRunning() ||
+            vm.wireGuardMobileStatus.isFirstStart ||
+            vm.isEnablingDevice ||
+            vm.isDisablingDevice ||
+            vm.isDownloadingWireGuardConf ||
+            !angular.isObject(vm.operatingSystemType) ||
+            !angular.isString(vm.operatingSystemType.type);
+    }
+
+    function isOpenVpnMobileServerRunning() {
+        return angular.isObject(vm.vpnHomeStatus) && vm.vpnHomeStatus.isRunning;
+    }
+
+    function isWireGuardMobileServerRunning() {
+        return angular.isObject(vm.wireGuardMobileStatus) && vm.wireGuardMobileStatus.isRunning;
+    }
+
+    function isAnyMobileServerRunning() {
+        return isOpenVpnMobileServerRunning() || isWireGuardMobileServerRunning();
+    }
+
+    function loadWireGuardMobileStatus() {
+        vm.wireGuardMobileStatus = vm.wireGuardMobileStatus || {isRunning: false, isFirstStart: true, host: ''};
+        return VpnHomeService.loadWireGuardStatus().then(function(response) {
+            vm.wireGuardMobileStatus = response.data;
+        }, function(response) {
+            logger.warn('Unable to load WireGuard mobile status', response);
+        });
     }
 
     // type equals enum on server
@@ -915,14 +958,14 @@ function Controller(logger, $stateParams, $window, $interval, $timeout, $q, $tra
     // ** eBlocker Mobile
 
     function enableDeviceForMobile(device) {
-        if (vm.vpnHomeStatus.isFirstStart || vm.isEnablingDevice) {
+        if (isNoMobileServerConfigured() || vm.isEnablingDevice) {
             let deferred = $q.defer();
             deferred.resolve('First start or disabling .. ');
             return deferred.promise;
         }
 
         vm.isEnablingDevice = true;
-        return VpnHomeService.enableDevice(device.id).then(function success() {
+        return VpnHomeService.enableDeviceForAllMobileVpn(device.id).then(function success() {
             NotificationService.info('ADMINCONSOLE.VPN_HOME.NOTIFICATION.DEVICE_ENABLED');
         }).finally(function done() {
             vm.isEnablingDevice = false;
@@ -930,13 +973,13 @@ function Controller(logger, $stateParams, $window, $interval, $timeout, $q, $tra
     }
 
     function disableDevice(device) {
-        if (vm.vpnHomeStatus.isFirstStart || vm.isDisablingDevice) {
+        if (isNoMobileServerConfigured() || vm.isDisablingDevice) {
             let deferred = $q.defer();
             deferred.resolve('First start or disabling .. ');
             return deferred.promise;
         }
         vm.isDisablingDevice = true;
-        return VpnHomeService.disableDevice(device.id).then(function success() {
+        return VpnHomeService.disableDeviceForAllMobileVpn(device.id).then(function success() {
             NotificationService.info('ADMINCONSOLE.VPN_HOME.NOTIFICATION.DEVICE_DISABLED');
         }).finally(function done() {
             vm.isDisablingDevice = false;
@@ -944,24 +987,48 @@ function Controller(logger, $stateParams, $window, $interval, $timeout, $q, $tra
     }
 
     function onChangeMobilePrivateNetworkAccess(device) {
-        return VpnHomeService.setPrivateNetworkAccess(device.id, device.mobilePrivateNetworkAccess)
+        return VpnHomeService.setPrivateNetworkAccessForAllMobileVpn(device.id, device.mobilePrivateNetworkAccess)
             .then(function (response) {
                 device.mobilePrivateNetworkAccess = response.data;
             });
     }
 
     function downloadClientConf(device) {
+        return downloadOpenVpnClientConf(device);
+    }
+
+    function isNoMobileServerConfigured() {
+        return vm.vpnHomeStatus.isFirstStart && vm.wireGuardMobileStatus.isFirstStart;
+    }
+
+    function downloadOpenVpnClientConf(device) {
         if (!angular.isString(vm.vpnHomeStatus.host) || vm.vpnHomeStatus.host === '') {
             NotificationService.error('ADMINCONSOLE.VPN_HOME.NOTIFICATION.HOST_MISSING');
         } else {
-            vm.isDownloadingConf = true;
-            VpnHomeService.generateDownloadUrl(device.id, vm.operatingSystemType.type).then(function success(response) {
-                // Sort certificates into dic
+            vm.isDownloadingOpenVpnConf = true;
+            VpnHomeService.generateOpenVpnDownloadUrl(device.id, vm.operatingSystemType.type).
+            then(function success(response) {
                 $window.location = response.data;
             }, function error(response) {
-                // fail
+                logger.error('OpenVPN mobile configuration download failed', response);
             }).finally(function done() {
-                vm.isDownloadingConf = false;
+                vm.isDownloadingOpenVpnConf = false;
+            });
+        }
+    }
+
+    function downloadWireGuardClientConf(device) {
+        if (!angular.isString(vm.wireGuardMobileStatus.host) || vm.wireGuardMobileStatus.host === '') {
+            NotificationService.error('ADMINCONSOLE.VPN_HOME.NOTIFICATION.HOST_MISSING');
+        } else {
+            vm.isDownloadingWireGuardConf = true;
+            VpnHomeService.generateWireGuardDownloadUrl(device.id, vm.operatingSystemType.type).
+            then(function success(response) {
+                $window.location = response.data;
+            }, function error(response) {
+                logger.error('WireGuard mobile configuration download failed', response);
+            }).finally(function done() {
+                vm.isDownloadingWireGuardConf = false;
             });
         }
     }

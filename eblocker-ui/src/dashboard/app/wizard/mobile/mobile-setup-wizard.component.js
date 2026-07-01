@@ -14,14 +14,15 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+/* jshint -W071 */
 export default {
     templateUrl: 'app/wizard/mobile/mobile-setup-wizard.component.html',
     controller: Controller,
     controllerAs: 'vm'
 };
 
-function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnHomeService, NotificationService,
-                    DialogService) { // jshint ignore: line
+function Controller(logger, $state, $window, $translate, deviceDetector, DeviceService,
+                    VpnHomeService, NotificationService, DialogService) {
     'ngInject';
 
     const vm = this;
@@ -34,12 +35,18 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
     vm.prevStep = prevStep;
     vm.getConfigFileName = getConfigFileName;
     vm.getOpenVPNName = getOpenVPNName;
+    vm.getConfigurationName = getConfigurationName;
+    vm.onProtocolChange = onProtocolChange;
+    vm.getClientDownloadUrl = getClientDownloadUrl;
+    vm.getSelectedProtocolLabel = getSelectedProtocolLabel;
 
     vm.isWindows = isWindows;
     vm.isIos = isIos;
     vm.isMac = isMac;
     vm.isAndroid = isAndroid;
     vm.isOther = isOther;
+    vm.isOpenVpnSelected = isOpenVpnSelected;
+    vm.isWireGuardSelected = isWireGuardSelected;
 
     vm.$onInit = function() {
         vm.currentStep = 1;
@@ -52,9 +59,17 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
             // ,
             // {type: 'OTHER', name: 'other', value: 'SHARED.MOBILE.DEVICE_TYPE.OTHER'}
         ];
+        vm.protocols = [
+            {type: VpnHomeService.WIREGUARD, value: 'WireGuard'},
+            {type: VpnHomeService.OPENVPN, value: 'OpenVPN'}
+        ];
+        vm.mobileProtocol = vm.protocols[0];
         vm.deviceOs = getDeviceTypeObject(vm.osTypes, deviceDetector.os);
-        loadDevice().then(function success() {
-            getOpenVPNName(vm.device);
+        loadStatuses().then(function() {
+            chooseDefaultProtocol();
+            return loadDevice();
+        }).then(function success() {
+            getConfigurationName(vm.device);
         });
     };
 
@@ -80,6 +95,14 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
 
     function isOther() {
         return vm.deviceOs.type === 'OTHER';
+    }
+
+    function isOpenVpnSelected() {
+        return angular.isObject(vm.mobileProtocol) && vm.mobileProtocol.type === VpnHomeService.OPENVPN;
+    }
+
+    function isWireGuardSelected() {
+        return angular.isObject(vm.mobileProtocol) && vm.mobileProtocol.type === VpnHomeService.WIREGUARD;
     }
 
     function backToDashboard(event) {
@@ -130,6 +153,23 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
         return num <= max;
     }
 
+    function loadStatuses() {
+        return VpnHomeService.loadStatuses().then(function success(statuses) {
+            vm.vpnHomeStatus = statuses.openVpn;
+            vm.wireGuardMobileStatus = statuses.wireGuard;
+        }, function(response) {
+            logger.error('Error loading mobile VPN status ', response);
+        });
+    }
+
+    function chooseDefaultProtocol() {
+        if (angular.isObject(vm.wireGuardMobileStatus) && vm.wireGuardMobileStatus.isRunning) {
+            vm.mobileProtocol = vm.protocols[0];
+        } else {
+            vm.mobileProtocol = vm.protocols[1];
+        }
+    }
+
     function loadDevice() {
         return DeviceService.getDevice().then(function success(response) {
             if (angular.isObject(response.data)) {
@@ -139,7 +179,7 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
     }
 
     function getConfigFileName() {
-        return vm.openVpnFileName || '';
+        return vm.configurationFileName || '';
     }
 
     // STEP 2 -- Choose OS, download config
@@ -155,15 +195,45 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
     }
 
     function getOpenVPNName(device) {
+        return getConfigurationName(device);
+    }
+
+    function getConfigurationName(device) {
         if (!angular.isObject(device) || angular.isUndefined(device.id)) {
             NotificationService.error('WIZARD.MOBILE.CHOOSE_OS.NOTIFY_NO_DEVICE');
             return;
         }
-        VpnHomeService.getOpenVpnFileName(device.id, vm.deviceOs.type).then(function success(response) {
+        VpnHomeService.getFileName(device.id, vm.deviceOs.type, vm.mobileProtocol.type).
+        then(function success(response) {
+            vm.configurationFileName = response.data;
             vm.openVpnFileName = response.data;
         }, function(response) {
             logger.error('Error getting VPN file name ', response);
         });
+    }
+
+    function onProtocolChange() {
+        getConfigurationName(vm.device);
+    }
+
+    function getSelectedProtocolLabel() {
+        return angular.isObject(vm.mobileProtocol) ? vm.mobileProtocol.value : '';
+    }
+
+    function getClientDownloadUrl() {
+        if (vm.mobileProtocol.type === VpnHomeService.WIREGUARD) {
+            if (isWindows() || isMac()) {
+                return 'https://www.wireguard.com/install/';
+            }
+            if (isIos()) {
+                return 'https://apps.apple.com/app/wireguard/id1441195209';
+            }
+            if (isAndroid()) {
+                return 'https://play.google.com/store/apps/details?id=com.wireguard.android';
+            }
+            return 'https://www.wireguard.com/install/';
+        }
+        return $translate.instant('WIZARD.MOBILE.CHOOSE_OS.VPN_URL.' + vm.deviceOs.type);
     }
 
     function downloadClientConf(device) {
@@ -172,11 +242,11 @@ function Controller(logger, $state, $window, deviceDetector, DeviceService, VpnH
             return;
         }
         vm.isDownloadingConf = true;
-        VpnHomeService.generateDownloadUrl(device.id, vm.deviceOs.type).then(function success(response) {
-            // Sort certificates into dic
+        VpnHomeService.generateDownloadUrl(device.id, vm.deviceOs.type, vm.mobileProtocol.type).
+        then(function success(response) {
             $window.location = response.data;
         }, function error(response) {
-            // fail
+            logger.error('Error downloading mobile VPN configuration ', response);
         }).finally(function done() {
             vm.isDownloadingConf = false;
         });

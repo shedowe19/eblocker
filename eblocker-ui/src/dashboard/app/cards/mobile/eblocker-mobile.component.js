@@ -32,8 +32,12 @@ function Controller(logger, $timeout, $window, $q, CardService, VpnHomeService, 
 
     const CARD_NAME = 'MOBILE'; //'card-11';
 
-    vm.downloadClientConf =  downloadClientConf;
-    vm.goToRecommendedApps =  goToRecommendedApps;
+    vm.downloadClientConf = downloadClientConf;
+    vm.downloadOpenVpnClientConf = downloadOpenVpnClientConf;
+    vm.downloadWireGuardClientConf = downloadWireGuardClientConf;
+    vm.goToRecommendedApps = goToRecommendedApps;
+    vm.isOpenVpnDownloadDisabled = isOpenVpnDownloadDisabled;
+    vm.isWireGuardDownloadDisabled = isWireGuardDownloadDisabled;
 
     // type equals enum on server
     // name equals string from deviceDetector (except "other")
@@ -48,7 +52,7 @@ function Controller(logger, $timeout, $window, $q, CardService, VpnHomeService, 
 
     vm.$onInit = function() {
         loadStatus().then(function success() {
-            return loadCertificates();
+            return loadConfigurations();
         }).then(function success() {
             return loadDevice();
         });
@@ -72,9 +76,10 @@ function Controller(logger, $timeout, $window, $q, CardService, VpnHomeService, 
     };
 
     function loadStatus() {
-        return VpnHomeService.loadStatus().then(function success(response) {
-            vm.vpnHomeStatus = response.data;
-            return response.data;
+        return VpnHomeService.loadStatuses().then(function success(statuses) {
+            vm.vpnHomeStatus = statuses.openVpn;
+            vm.wireGuardMobileStatus = statuses.wireGuard;
+            return statuses;
         });
     }
 
@@ -84,6 +89,8 @@ function Controller(logger, $timeout, $window, $q, CardService, VpnHomeService, 
                 vm.device = response.data;
                 vm.device.hasCertificate = angular.isDefined(vm.vpnHomeCertificates) &&
                     vm.vpnHomeCertificates.indexOf(vm.device.id) > -1;
+                vm.device.hasWireGuardConfiguration = angular.isDefined(vm.wireGuardConfigurations) &&
+                    vm.wireGuardConfigurations.indexOf(vm.device.id) > -1;
             }
         });
     }
@@ -92,30 +99,71 @@ function Controller(logger, $timeout, $window, $q, CardService, VpnHomeService, 
 
     }
 
-    function loadCertificates() {
-        if (vm.vpnHomeStatus.isRunning) {
-            return VpnHomeService.loadCertificates().then(function success(response) {
-                vm.vpnHomeCertificates = response.data;
-                return response;
-            });
-        } else {
-            vm.vpnHomeCertificates = [];
-            return $q.resolve({data: []});
-        }
+    function loadConfigurations() {
+        const openVpnCertificates = isOpenVpnRunning() ?
+            VpnHomeService.loadOpenVpnCertificates() : $q.resolve({data: []});
+        const wireGuardConfigurations = isWireGuardRunning() ?
+            VpnHomeService.loadWireGuardConfigurations() : $q.resolve({data: []});
+
+        return $q.all([openVpnCertificates, wireGuardConfigurations]).then(function success(responses) {
+            vm.vpnHomeCertificates = responses[0].data;
+            vm.wireGuardConfigurations = responses[1].data;
+            return responses;
+        });
+    }
+
+    function isOpenVpnRunning() {
+        return angular.isObject(vm.vpnHomeStatus) && vm.vpnHomeStatus.isRunning;
+    }
+
+    function isWireGuardRunning() {
+        return angular.isObject(vm.wireGuardMobileStatus) && vm.wireGuardMobileStatus.isRunning;
+    }
+
+    function isOpenVpnDownloadDisabled() {
+        return !isOpenVpnRunning() ||
+            vm.vpnHomeStatus.isFirstStart ||
+            vm.isDownloadingOpenVpnConf;
+    }
+
+    function isWireGuardDownloadDisabled() {
+        return !isWireGuardRunning() ||
+            vm.wireGuardMobileStatus.isFirstStart ||
+            vm.isDownloadingWireGuardConf;
     }
 
     function downloadClientConf(device) {
+        return downloadOpenVpnClientConf(device);
+    }
+
+    function downloadOpenVpnClientConf(device) {
         if (!angular.isString(vm.vpnHomeStatus.host) || vm.vpnHomeStatus.host === '') {
             NotificationService.error('MOBILE.CARD.NOTIFICATION.HOST_MISSING');
         } else {
-            vm.isDownloadingConf = true;
-            VpnHomeService.generateDownloadUrl(device.id, vm.operatingSystemType.type).then(function success(response) {
-                // Sort certificates into dic
+            vm.isDownloadingOpenVpnConf = true;
+            VpnHomeService.generateOpenVpnDownloadUrl(device.id, vm.operatingSystemType.type).
+            then(function success(response) {
                 $window.location = response.data;
             }, function error(response) {
-                // fail
+                logger.error('OpenVPN mobile configuration download failed', response);
             }).finally(function done() {
-                vm.isDownloadingConf = false;
+                vm.isDownloadingOpenVpnConf = false;
+            });
+        }
+    }
+
+    function downloadWireGuardClientConf(device) {
+        if (!angular.isString(vm.wireGuardMobileStatus.host) || vm.wireGuardMobileStatus.host === '') {
+            NotificationService.error('MOBILE.CARD.NOTIFICATION.HOST_MISSING');
+        } else {
+            vm.isDownloadingWireGuardConf = true;
+            VpnHomeService.generateWireGuardDownloadUrl(device.id, vm.operatingSystemType.type).
+            then(function success(response) {
+                $window.location = response.data;
+            }, function error(response) {
+                logger.error('WireGuard mobile configuration download failed', response);
+            }).finally(function done() {
+                vm.isDownloadingWireGuardConf = false;
             });
         }
     }

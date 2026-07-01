@@ -15,8 +15,6 @@
             </div>
         </div>
 
-        <!--<div ng-if="vm.tmpMobileState">-->
-                       <!--ng-disabled="!vm.tmpMobileState || vm.vpnHomeStatus.isFirstStart || vm.isEnablingDevice || vm.isDisablingDevice || vm.isDownloadingConf"-->
         <div>
             <md-switch md-theme="eBlockerThemeSwitch" class="md-primary switch-word-break"
                        layout="row" layout-align="start center"
@@ -27,49 +25,58 @@
 
         <div ng-if="vm.tmpMobileState">
             <div hide-gt-xs style="padding-top: 16px;"></div>
-                <div layout-xs="column" layout="row" layout-align="start center">
-                    <div layout="row" layout-align="start center">
-                        <div>
-                            <md-button class="md-raised md-primary md-accent"
-                                       ng-disabled="vm.isMobileConfigDownloadDisabled()"
-                                       ng-click="vm.downloadClientConf(vm.device)"
-                                       aria-label="{{ 'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ACTION.DOWNLOAD_CONF' | translate }}">
-                                <span hide-gt-xs>{{ 'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ACTION.DOWNLOAD_CERT_XS' | translate }}</span>
-                                <span hide-xs>{{'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ACTION.DOWNLOAD_CERT' | translate}}</span>
-                            </md-button>
-                        </div>
-                        <div ng-if="vm.isEnablingDevice || vm.isDisablingDevice || vm.isDownloadingConf" style="margin-left: 20px;margin-right: 20px;">
-                            <md-progress-circular md-mode="indeterminate" md-diameter="36"></md-progress-circular>
-                        </div>
-                        <div hide-xs ng-if="!vm.isEnablingDevice && !vm.isDisablingDevice && !vm.isDownloadingConf" style="margin-left: 76px;">
-
-                        </div>
-                    </div>
-                    <div flex-gt-xs="40" flex="100" style="width: 100%;">
-                        <div>
-                            <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
-                                <label>{{ 'SHARED.MOBILE.DEVICE_TYPE.LABEL_SELECT' | translate }}</label>
-                                <md-select ng-model="vm.operatingSystemType" aria-label="{{ 'SHARED.MOBILE.DEVICE_TYPE.LABEL_SELECT' | translate }}">
-                                    <div ng-repeat="type in vm.osTypes">
-                                        <md-option ng-value="type">{{ type.value | translate }}</md-option>
-                                    </div>
-                                </md-select>
-                            </md-input-container>
-                        </div>
-                    </div>
+            <div layout-xs="column" layout="row" layout-align="start center">
+                <div flex-gt-xs="40" flex="100" style="width: 100%;">
+                    <md-input-container md-theme="eBlockerThemeInput" style="width: 100%;">
+                        <label>{{ 'SHARED.MOBILE.DEVICE_TYPE.LABEL_SELECT' | translate }}</label>
+                        <md-select ng-model="vm.operatingSystemType" aria-label="{{ 'SHARED.MOBILE.DEVICE_TYPE.LABEL_SELECT' | translate }}">
+                            <div ng-repeat="type in vm.osTypes">
+                                <md-option ng-value="type">{{ type.value | translate }}</md-option>
+                            </div>
+                        </md-select>
+                    </md-input-container>
                 </div>
+            </div>
 
-                <div layout="row" style="margin-top: 20px;">
-                    <p>
-                        <span translate="ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.HINT_PRE"></span>
-                        <span translate="ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.HINT_LINK"
-                              ng-click="vm.goToDashboard()"
-                              class="orange-link" style="font-weight: bold;"></span>
-                        <span translate="ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.HINT_POST"></span>
-                    </p>
+            <div layout-xs="column" layout="row" layout-align="start center">
+                <div>
+                    <md-button class="md-raised md-primary md-accent"
+                               ng-disabled="vm.isOpenVpnConfigDownloadDisabled()"
+                               ng-click="vm.downloadOpenVpnClientConf(vm.device)"
+                               aria-label="{{ 'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ARIA.DOWNLOAD_OPENVPN_CONF' | translate }}">
+                        {{'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ACTION.DOWNLOAD_OPENVPN_CONF' | translate}}
+                    </md-button>
+                    <md-tooltip ng-if="!vm.vpnHomeStatus.isRunning" md-delay="300">
+                        {{'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.TOOLTIP.OPENVPN_NOT_RUNNING' | translate}}
+                    </md-tooltip>
                 </div>
+                <div hide-xs style="width: 12px;"></div>
+                <div>
+                    <md-button class="md-raised md-primary md-accent"
+                               ng-disabled="vm.isWireGuardConfigDownloadDisabled()"
+                               ng-click="vm.downloadWireGuardClientConf(vm.device)"
+                               aria-label="{{ 'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ARIA.DOWNLOAD_WIREGUARD_CONF' | translate }}">
+                        {{'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.ACTION.DOWNLOAD_WIREGUARD_CONF' | translate}}
+                    </md-button>
+                    <md-tooltip ng-if="!vm.wireGuardMobileStatus.isRunning" md-delay="300">
+                        {{'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.TOOLTIP.WIREGUARD_NOT_RUNNING' | translate}}
+                    </md-tooltip>
+                </div>
+                <div ng-if="vm.isEnablingDevice || vm.isDisablingDevice || vm.isDownloadingOpenVpnConf || vm.isDownloadingWireGuardConf" style="margin-left: 20px;margin-right: 20px;">
+                    <md-progress-circular md-mode="indeterminate" md-diameter="36"></md-progress-circular>
+                </div>
+            </div>
+
+            <div layout="row" style="margin-top: 20px;">
+                <p>
+                    <span translate="ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.HINT_PRE"></span>
+                    <span translate="ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.HINT_LINK"
+                          ng-click="vm.goToDashboard()"
+                          class="orange-link" style="font-weight: bold;"></span>
+                    <span translate="ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.HINT_POST"></span>
+                </p>
+            </div>
         </div>
 
     </div>
-
 </div>

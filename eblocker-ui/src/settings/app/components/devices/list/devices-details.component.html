@@ -65,7 +65,7 @@
                             </md-tab>
 
                         <!-- MOBILE -->
-                            <md-tab ng-disabled="!vm.vpnHomeStatus.isRunning || !vm.hasFeature('PRO')">
+                            <md-tab ng-disabled="!vm.isAnyMobileServerRunning() || !vm.hasFeature('PRO')">
                                 <md-tab-label>{{ 'ADMINCONSOLE.DEVICES_LIST.DETAILS.MOBILE.TAB_LABEL' | translate }}</md-tab-label>
                                 <md-tab-body>
                                     <ng-include src="'app/components/devices/list/devices-details-mobile.component.html'"></ng-include>

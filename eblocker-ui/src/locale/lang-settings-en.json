@@ -527,15 +527,25 @@
                     "ACTION" : {
                         "CREATE_CERT" : "Create configuration",
                         "DOWNLOAD_CERT" : "Download configuration",
+                        "DOWNLOAD_OPENVPN_CONF" : "Download OpenVPN configuration",
+                        "DOWNLOAD_WIREGUARD_CONF" : "Download WireGuard configuration",
                         "DOWNLOAD_CERT_XS" : "Download config",
                         "REVOKE_CERT" : "Revoke configuration"
+                    },
+                    "ARIA" : {
+                        "DOWNLOAD_OPENVPN_CONF" : "Download OpenVPN configuration",
+                        "DOWNLOAD_WIREGUARD_CONF" : "Download WireGuard configuration"
                     },
                     "HINT_LINK" : "eBlocker Dashboard",
                     "HINT_POST" : "on the mobile device to install the configuration directly into your VPN app!",
                     "HINT_PRE" : "Hint: Use the",
                     "LABEL_ENABLED" : "eBlocker Mobile Remote Access enabled",
                     "LABEL_PRIVATE_NETWORK_ACCESS" : "Remote device may access resources in local network",
-                    "TAB_LABEL" : "Mobile"
+                    "TAB_LABEL" : "Mobile",
+                    "TOOLTIP" : {
+                        "OPENVPN_NOT_RUNNING" : "OpenVPN Mobile is not active.",
+                        "WIREGUARD_NOT_RUNNING" : "WireGuard Mobile is not active."
+                    }
                 },
                 "USERS" : {
                     "ACTION" : {
@@ -3402,12 +3412,15 @@
             },
             "LABEL" : "Status",
             "LABEL_CONNECTION_TEST" : "Connection test",
+            "LABEL_CONNECTION_TEST_WIREGUARD_INFO" : "The existing connection test checks OpenVPN Mobile. WireGuard Mobile runs in parallel on 51820/udp.",
             "LABEL_EXTERNAL_HOST_IP" : "External IP address or DNS name",
             "LABEL_EXTERNAL_TYPE" : "External address type",
             "LABEL_MOBILE_PORT" : "eBlocker Mobile port",
+            "LABEL_OPENVPN_MOBILE" : "OpenVPN Mobile",
             "LABEL_PORT_FORWARDING" : "Port forwarding",
             "LABEL_ROUTER_PORT" : "Mapped to this external port on router",
             "LABEL_SETTINGS" : "Settings",
+            "LABEL_WIREGUARD_MOBILE" : "WireGuard Mobile",
             "LABEL_WIZARD_REPEAT" : "Configuration",
             "SWITCH_VPN" : {
                 "OFF" : "eBlocker Mobile off",
@@ -3490,6 +3503,7 @@
                     "MAP_PORT_LABEL" : "Mapped to this external port on router",
                     "MOBILE_PORT" : "eBlocker Mobile port",
                     "TEXT1" : "eBlocker will now try to map the ports on your router using UPnP techniques.",
+                    "TEXT_PARALLEL_PORTS" : "Two UDP port forwards are configured: OpenVPN Mobile on 1194/udp and WireGuard Mobile on 51820/udp.",
                     "TEXT2" : "Whether this is possible or not, depends on your router and its configuration. Most modern routers support UPnP, but it might be switched off for security reasons."
                 },
                 "ERROR" : {
@@ -3497,13 +3511,15 @@
                     "PORT_NUMBER" : "Port must be a number.",
                     "PORT_REQUIRED" : "Port is required.",
                     "PORT_TOO_LARGE" : "Port is too large",
-                    "PORT_TOO_SMALL" : "Port is too small"
+                    "PORT_TOO_SMALL" : "Port is too small",
+                    "PORT_COLLISION" : "OpenVPN and WireGuard must not use the same external router port."
                 },
                 "MANUAL" : {
                     "HEADER" : "Manual Port Mapping",
                     "MAP_PORT_LABEL" : "Mapped to this external port on router",
                     "MOBILE_PORT" : "eBlocker Mobile port",
                     "TEXT1" : "Please map the ports on your router now. As protocol select UDP.",
+                    "TEXT_PARALLEL_PORTS" : "Please create two UDP port forwards on your router: OpenVPN Mobile and WireGuard Mobile.",
                     "TEXT_CONFIRM" : "I have mapped the ports on my router."
                 },
                 "NOTIFICATION" : {

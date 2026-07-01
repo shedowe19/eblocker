@@ -24,10 +24,15 @@ function Controller(logger, VpnHomeService, NotificationService, DialogService, 
     'ngInject';
     'use strict';
 
+    const OPENVPN_PORT = 1194;
+    const WIREGUARD_PORT = 51820;
     const vm = this;
     vm.status = {isRunning: false, isFirstStart: false, host: null};
+    vm.wireGuardStatus = {isRunning: false, isFirstStart: false, host: null};
     vm.resetServer = resetServer;
+    vm.resetWireGuardServer = resetWireGuardServer;
     vm.toggleServerStatus = toggleServerStatus;
+    vm.toggleWireGuardServerStatus = toggleWireGuardServerStatus;
     vm.repeatWizard = repeatWizard;
     vm.shortenHost = shortenHost;
 
@@ -41,31 +46,45 @@ function Controller(logger, VpnHomeService, NotificationService, DialogService, 
         loadMobileStatus();
     };
 
-    function updateDisplayValues(status) {
-
-        vm.externalAddressConfig = {
-            value: status.externalAddressType ? 'ADMINCONSOLE.VPN_HOME_STATUS.EXTERNAL_TYPES.' +
-                status.externalAddressType : ''
-        };
-
-        vm.ipOrHostConfig = {
-            value: shortenHost(status.host || ''),
-            valueUncut: status.host
-        };
-
-        vm.ebMobilePortConfig = {
-            value: '1194'
-        };
-
-        vm.mappedPortConfig = {
-            value: status.mappedPort
-        };
-
+    function updateDisplayValues(status, mobilePort) {
         const prefix = 'ADMINCONSOLE.VPN_HOME_STATUS.';
-        vm.portForwardingConfig = {
-            value: status.portForwardingMode === 'AUTO' ?
-                prefix + 'VALUE_FORWARDING_AUTO' : prefix + 'VALUE_FORWARDING_MAN'
+        return {
+            externalAddressConfig: {
+                value: status.externalAddressType ? prefix + 'EXTERNAL_TYPES.' + status.externalAddressType : ''
+            },
+            ipOrHostConfig: {
+                value: shortenHost(status.host || ''),
+                valueUncut: status.host
+            },
+            ebMobilePortConfig: {
+                value: String(mobilePort)
+            },
+            mappedPortConfig: {
+                value: status.mappedPort
+            },
+            portForwardingConfig: {
+                value: status.portForwardingMode === 'AUTO' ?
+                    prefix + 'VALUE_FORWARDING_AUTO' : prefix + 'VALUE_FORWARDING_MAN'
+            }
         };
+    }
+
+    function updateOpenVpnDisplayValues(status) {
+        const values = updateDisplayValues(status, OPENVPN_PORT);
+        vm.externalAddressConfig = values.externalAddressConfig;
+        vm.ipOrHostConfig = values.ipOrHostConfig;
+        vm.ebMobilePortConfig = values.ebMobilePortConfig;
+        vm.mappedPortConfig = values.mappedPortConfig;
+        vm.portForwardingConfig = values.portForwardingConfig;
+    }
+
+    function updateWireGuardDisplayValues(status) {
+        const values = updateDisplayValues(status, WIREGUARD_PORT);
+        vm.wireGuardExternalAddressConfig = values.externalAddressConfig;
+        vm.wireGuardIpOrHostConfig = values.ipOrHostConfig;
+        vm.wireGuardMobilePortConfig = values.ebMobilePortConfig;
+        vm.wireGuardMappedPortConfig = values.mappedPortConfig;
+        vm.wireGuardPortForwardingConfig = values.portForwardingConfig;
     }
 
     function shortenHost(longHost) {
@@ -88,27 +107,34 @@ function Controller(logger, VpnHomeService, NotificationService, DialogService, 
     }
 
     function loadMobileStatus() {
-        VpnHomeService.loadStatus().then(function(response) {
-            vm.status = response.data;
-            updateDisplayValues(vm.status);
+        VpnHomeService.loadStatuses().then(function(statuses) {
+            vm.status = statuses.openVpn;
+            vm.wireGuardStatus = statuses.wireGuard;
+            updateOpenVpnDisplayValues(vm.status);
+            updateWireGuardDisplayValues(vm.wireGuardStatus);
         });
     }
 
     function resetServer(event) {
         DialogService.homeVpnReset(event, tryResetServer);
-        // If there are certificates, ask for confirmation
-        // if (angular.isDefined(vm.certificates) && vm.certificates.length > 0) {
-        //     // Ask for confirmation
-        //     DialogService.homeVpnReset(event, tryResetServer);
-        // } else {
-        //     // No certificates, do not ask
-        //     tryResetServer();
-        // }
+    }
+
+    function resetWireGuardServer(event) {
+        DialogService.homeVpnReset(event, tryResetWireGuardServer);
     }
 
     function tryResetServer() {
-        return VpnHomeService.resetServer().then(function() {
+        return VpnHomeService.resetOpenVpnServer().then(function() {
             vm.status.isRunning = false;
+            NotificationService.info('ADMINCONSOLE.VPN_HOME.NOTIFICATION.CONFIRMATION_RESET');
+        }).finally(function updateMobileStatus() {
+            loadMobileStatus();
+        });
+    }
+
+    function tryResetWireGuardServer() {
+        return VpnHomeService.resetWireGuardServer().then(function() {
+            vm.wireGuardStatus.isRunning = false;
             NotificationService.info('ADMINCONSOLE.VPN_HOME.NOTIFICATION.CONFIRMATION_RESET');
         }).finally(function updateMobileStatus() {
             loadMobileStatus();
@@ -120,28 +146,49 @@ function Controller(logger, VpnHomeService, NotificationService, DialogService, 
             openMobileWizard();
         } else {
             vm.isTogglingStatus = true;
-            VpnHomeService.startStopServer(vm.status).then(function(response) {
-                saved(response.data);
+            VpnHomeService.startStopOpenVpnServer(vm.status).then(function(response) {
+                saved(response.data, vm.status, false);
             }, function() {
-                cancelled();
+                cancelled(vm.status);
             }).finally(function() {
                 vm.isTogglingStatus = false;
+                updateOpenVpnDisplayValues(vm.status);
             });
         }
     }
 
-    function saved(status) {
-        // Expected new state doesn't match the current state => error
-        if (status.isRunning !== vm.status.isRunning) {
-            logger.error('New status ' + (status.isRunning ? '"running"' : '"not running"') + ' does not match' +
-            ' expected old status ' + (vm.status.isRunning ? '"running"' : '"not running"'));
-            NotificationService.error('ADMINCONSOLE.VPN_HOME.NOTIFICATION.INIT_FAILED');
+    function toggleWireGuardServerStatus() {
+        if (vm.wireGuardStatus.isRunning && vm.wireGuardStatus.isFirstStart) {
+            openMobileWizard();
+        } else {
+            vm.isTogglingWireGuardStatus = true;
+            VpnHomeService.startStopWireGuardServer(vm.wireGuardStatus).then(function(response) {
+                saved(response.data, vm.wireGuardStatus, true);
+            }, function() {
+                cancelled(vm.wireGuardStatus);
+            }).finally(function() {
+                vm.isTogglingWireGuardStatus = false;
+                updateWireGuardDisplayValues(vm.wireGuardStatus);
+            });
         }
-        vm.status = status;
     }
 
-    function cancelled() {
-        vm.status.isRunning = false;
+    function saved(status, expectedStatus, isWireGuard) {
+        // Expected new state doesn't match the current state => error
+        if (status.isRunning !== expectedStatus.isRunning) {
+            logger.error('New status ' + (status.isRunning ? '"running"' : '"not running"') + ' does not match' +
+            ' expected old status ' + (expectedStatus.isRunning ? '"running"' : '"not running"'));
+            NotificationService.error('ADMINCONSOLE.VPN_HOME.NOTIFICATION.INIT_FAILED');
+        }
+        if (isWireGuard) {
+            vm.wireGuardStatus = status;
+        } else {
+            vm.status = status;
+        }
+    }
+
+    function cancelled(status) {
+        status.isRunning = false;
     }
 
     function openMobileWizard() {
